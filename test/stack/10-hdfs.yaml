@@ -41,6 +41,7 @@ spec:
         configOverrides:
           core-site.xml:
             hadoop.security.group.mapping: "tech.stackable.hadoop.StackableGroupMapper"
+            hadoop.security.group.mapping.opa.url: "http://test-opa.default.svc.cluster.local:8081/v1/data/hdfs"
         replicas: 2
   dataNodes:
     roleGroups:
