@@ -36,6 +36,8 @@ spec:
       default:
         envOverrides:
           HADOOP_CLASSPATH: "/stackable/hadoop/share/hadoop/tools/lib/*.jar"
+          USERS_MAPPING_SUFFIX: "v1/data/hdfs"
+          USERS_MAPPING_TARGET: "users"
         configOverrides:
           core-site.xml:
             hadoop.security.group.mapping: "tech.stackable.hadoop.StackableGroupMapper"
