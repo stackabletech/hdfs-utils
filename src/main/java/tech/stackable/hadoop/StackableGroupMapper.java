@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.GroupMappingServiceProvider;
-import org.apache.hadoop.util.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,21 +33,6 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
-    private static class OpaQuery {
-        public OpaQueryInput input;
-
-        public OpaQuery(OpaQueryInput input) {
-            this.input = input;
-        }
-    }
-
-    public class OpaQueryInput {
-        public final String username;
-        public OpaQueryInput(String user) {
-            this.username = user;
-        }
-    }
-
     /**
      * Returns list of groups for a user.
      *
@@ -68,7 +52,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
         URI opaUri = URI.create(opaMappingUrl);
         HttpResponse<String> response = null;
 
-        OpaQuery query = new OpaQuery(new OpaQueryInput(user));
+        OpaQuery query = new OpaQuery(new OpaQuery.OpaQueryInput(user));
         String body = json.writeValueAsString(query);
 
         LOG.info("Request body [{}]", body);
@@ -82,16 +66,16 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
             LOG.error(e.getMessage());
         }
 
-        switch (response.statusCode()) {
-            case 200:
-                break;
-            default:
-                throw new IOException(opaUri.toString());
+        if (response == null || response.statusCode() != 200) {
+            throw new IOException(opaUri.toString());
         }
         String responseBody = response.body();
         LOG.info("Response body [{}]", responseBody);
 
-        return Lists.newArrayList("me", "myself", "I");
+        OpaQueryResult result = json.readValue(responseBody, OpaQueryResult.class);
+        LOG.info("Groups for [{}]: [{}]", user, result.groups);
+
+        return result.groups;
     }
 
     /**
