@@ -9,7 +9,30 @@ data:
   test.rego: |
     package hdfs
 
-    users := "me,myself,I"
+    groups := json.filter(users_by_name[input.username], ["groups"])
+
+    # returning data in the form presented by the UIF
+    users_by_name := {
+        "alice": {
+            "id": "af07f12c-1234-40a7-93e0-874537bdf3f5",
+            "username": "alice",
+            "groups": ["/superset-admin"],
+            "customAttributes": {},
+        },
+        "bob": {
+            "id": "af07f12c-2345-40a7-93e0-874537bdf3f5",
+            "username": "bob",
+            "groups": ["/admin"],
+            "customAttributes": {},
+        },
+        "stackable": {
+            "id": "af07f12c-3456-40a7-93e0-874537bdf3f5",
+            "username": "stackable",
+            "groups": ["/admin", "/superuser"],
+            "customAttributes": {},
+        },
+    }
+
 ---
 apiVersion: opa.stackable.tech/v1alpha1
 kind: OpaCluster
