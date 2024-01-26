@@ -1,5 +1,8 @@
 package tech.stackable.hadoop;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.GroupMappingServiceProvider;
 import org.apache.hadoop.util.Lists;
@@ -18,9 +21,32 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     private final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
     private final Configuration configuration;
     private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final ObjectMapper json;
 
     public StackableGroupMapper() {
         this.configuration = new Configuration();
+        this.json = new ObjectMapper()
+                // https://github.com/stackabletech/trino-opa-authorizer/issues/24
+                // OPA server can send other fields, such as `decision_id`` when enabling decision logs
+                // We could add all the fields we *currently* know, but it's more future-proof to ignore any unknown fields.
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                // do not include null values
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
+
+    private static class OpaQuery {
+        public OpaQueryInput input;
+
+        public OpaQuery(OpaQueryInput input) {
+            this.input = input;
+        }
+    }
+
+    public class OpaQueryInput {
+        public final String username;
+        public OpaQueryInput(String user) {
+            this.username = user;
+        }
     }
 
     /**
@@ -42,7 +68,9 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
         URI opaUri = URI.create(opaMappingUrl);
         HttpResponse<String> response = null;
 
-        String body = String.format("{\"input\":{\"username\": \"%s\"}}", user);
+        OpaQuery query = new OpaQuery(new OpaQueryInput(user));
+        String body = json.writeValueAsString(query);
+
         LOG.info("Request body [{}]", body);
         try {
             response = httpClient.send(
