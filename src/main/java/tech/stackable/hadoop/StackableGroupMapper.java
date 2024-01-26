@@ -55,7 +55,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
         OpaQuery query = new OpaQuery(new OpaQuery.OpaQueryInput(user));
         String body = json.writeValueAsString(query);
 
-        LOG.info("Request body [{}]", body);
+        LOG.debug("Request body [{}]", body);
         try {
             response = httpClient.send(
                     HttpRequest.newBuilder(opaUri).header("Content-Type", "application/json")
@@ -70,7 +70,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
             throw new IOException(opaUri.toString());
         }
         String responseBody = response.body();
-        LOG.info("Response body [{}]", responseBody);
+        LOG.debug("Response body [{}]", responseBody);
 
         OpaQueryResult result = json.readValue(responseBody, OpaQueryResult.class);
         LOG.info("Groups for [{}]: [{}]", user, result.groups);
