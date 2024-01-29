@@ -95,6 +95,6 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     @Override
     public void cacheGroupsAdd(List<String> groups) {
         // does nothing in this provider of user to groups mapping
-        LOG.info("ignoring cacheGroupsAdd: caching should be provided by the policy provider");
+        LOG.info("ignoring cacheGroupsAdd for groups [{}]: caching should be provided by the policy provider", groups);
     }
 }

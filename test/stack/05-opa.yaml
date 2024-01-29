@@ -31,6 +31,13 @@ data:
             "groups": ["/admin", "/superuser"],
             "customAttributes": {},
         },
+    # Hadoop will use the short-name for group mappings
+        "nn": {
+            "id": "af07f12c-7890-40a7-93e0-874537bdf3f5",
+            "username": "nn",
+            "groups": ["/admin", "/superuser"],
+            "customAttributes": {},
+        },
     }
 
 ---

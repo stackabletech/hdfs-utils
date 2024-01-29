@@ -28,9 +28,12 @@ spec:
     productVersion: 3.3.6
     custom: hdfs
   clusterConfig:
-    listenerClass: external-unstable
     dfsReplication: 1
     zookeeperConfigMapName: simple-hdfs-znode
+    authentication:
+      tlsSecretClass: tls
+      kerberos:
+        secretClass: kerberos-default
   nameNodes:
     roleGroups:
       default:
@@ -40,6 +43,7 @@ spec:
           core-site.xml:
             hadoop.security.group.mapping: "tech.stackable.hadoop.StackableGroupMapper"
             hadoop.security.group.mapping.opa.url: "http://test-opa.default.svc.cluster.local:8081/v1/data/hdfs"
+            hadoop.user.group.static.mapping.overrides: ""
         replicas: 2
   dataNodes:
     roleGroups:
