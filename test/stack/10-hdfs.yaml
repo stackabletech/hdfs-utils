@@ -41,6 +41,7 @@ spec:
           HADOOP_CLASSPATH: "/stackable/hadoop/share/hadoop/tools/lib/*.jar"
         configOverrides:
           core-site.xml:
+            # the mapper is only handled on the namenode so no need to apply this config to all roles
             hadoop.security.group.mapping: "tech.stackable.hadoop.StackableGroupMapper"
             hadoop.security.group.mapping.opa.url: "http://test-opa.default.svc.cluster.local:8081/v1/data/hdfs"
             # The operator adds a default static mapping when kerberos is activated, see:

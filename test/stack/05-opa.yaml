@@ -9,6 +9,14 @@ data:
   test.rego: |
     package hdfs
 
+    # this will return the group data in this form:
+    #    "result": {
+    #        "groups":
+    #            "groups": [
+    #                "/admin",
+    #                "/superuser"
+    #            ]
+    #        },...
     groups := json.filter(users_by_name[input.username], ["groups"])
 
     # returning data in the form presented by the UIF

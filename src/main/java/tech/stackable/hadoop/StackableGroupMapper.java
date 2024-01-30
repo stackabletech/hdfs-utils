@@ -14,16 +14,29 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Objects;
 
 public class StackableGroupMapper implements GroupMappingServiceProvider {
-    private static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.url";
+    public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.url";
     private final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
-    private final Configuration configuration;
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper json;
+    private URI opaUri = null;
 
     public StackableGroupMapper() {
-        this.configuration = new Configuration();
+        Configuration configuration = new Configuration();
+
+        String opaMappingUrl = configuration.get(OPA_MAPPING_URL_PROP);
+        if (opaMappingUrl == null) {
+            throw new RuntimeException("Config \"" + OPA_MAPPING_URL_PROP + "\" missing");
+        }
+
+        try {
+            this.opaUri = URI.create(opaMappingUrl);
+        } catch (Exception e) {
+            throw new OpaException.UriInvalid(opaUri, e);
+        }
+
         this.json = new ObjectMapper()
                 // https://github.com/stackabletech/trino-opa-authorizer/issues/24
                 // OPA server can send other fields, such as `decision_id`` when enabling decision logs
@@ -43,15 +56,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     public List<String> getGroups(String user) throws IOException {
         LOG.info("Calling StackableGroupMapper.getGroups for user [{}]", user);
 
-        String opaMappingUrl = configuration.get(OPA_MAPPING_URL_PROP);
-
-        if (opaMappingUrl == null) {
-            throw new RuntimeException("Config \"" + OPA_MAPPING_URL_PROP + "\" missing");
-        }
-
-        URI opaUri = URI.create(opaMappingUrl);
         HttpResponse<String> response = null;
-
         OpaQuery query = new OpaQuery(new OpaQuery.OpaQueryInput(user));
         String body = json.writeValueAsString(query);
 
@@ -66,9 +71,15 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
             LOG.error(e.getMessage());
         }
 
-        if (response == null || response.statusCode() != 200) {
-            throw new IOException(opaUri.toString());
+        switch (Objects.requireNonNull(response).statusCode()) {
+            case 200:
+                break;
+            case 404:
+                throw new OpaException.EndPointNotFound(opaUri.toString());
+            default:
+                throw new OpaException.OpaServerError(query.toString(), response);
         }
+
         String responseBody = response.body();
         LOG.debug("Response body [{}]", responseBody);
 
