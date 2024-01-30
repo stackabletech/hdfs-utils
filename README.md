@@ -66,3 +66,30 @@ Group mappings are resolved on the NameNode and the following configuration shou
 ## Testing
 
 CRDs for spinning up test infrastructure are provided in `test/stack`. The Tiltfile will deploy these resources, build and copy the mapper to the docker image, and re-deploy the image to the running HdfsCluster.
+
+The group mapping can be verified by shelling into the namenode, requesting a kerberos ticket and then calling `hdfs groups` for the namenode user:
+
+```shell
+klist -k /stackable/kerberos/keytab
+kinit -kt /stackable/kerberos/keytab nn/simple-hdfs.default.svc.cluster.local@CLUSTER.LOCAL
+klist
+
+# N.B. hadoop will replace the realm placeholder with the env-var automatically but this must be done manually if shelling into the container:
+export KERBEROS_REALM=$(grep -oP 'default_realm = \K.*' /stackable/kerberos/krb5.conf)
+cat /stackable/config/namenode/core-site.xml | sed -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g" > /stackable/config/namenode/core-site2.xml
+mv /stackable/config/namenode/core-site2.xml /stackable/config/namenode/core-site.xml
+
+bin/hdfs groups
+```
+
+The last command will yield something like this:
+```shell
+nn/simple-hdfs.default.svc.cluster.local@CLUSTER.LOCAL : admin superuser
+```
+and the Hadoop logs will show that the lookup has taken place:
+
+```
+- Calling StackableGroupMapper.getGroups for user [nn]
+- Opa response [{"result":{"groups":{"groups":["/admin","/superuser"]},"users_by_name":{"alice":{"customAttributes":{},"groups":["/superset-admin"],"id":"af07f12c-1234-40a7-93e0-874537bdf3f5","username":"alice"},"bob":{"customAttributes":{},"groups":["/admin"],"id":"af07f12c-2345-40a7-93e0-874537bdf3f5","username":"bob"},"nn":{"customAttributes":{},"groups":["/admin","/superuser"],"id":"af07f12c-7890-40a7-93e0-874537bdf3f5","username":"nn"},"stackable":{"customAttributes":{},"groups":["/admin","/superuser"],"id":"af07f12c-3456-40a7-93e0-874537bdf3f5","username":"stackable"}}}}
+- Groups for [nn]: [[admin, superuser]]
+```
