@@ -7,18 +7,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class StackableGroupMapperTest {
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testJsonMapper() throws JsonProcessingException {
         String input = "{\n" +
                 "    \"result\": {\n" +
-                "        \"groups\": {\n" +
-                "            \"groups\": [\n" +
-                "                \"/admin\",\n" +
-                "                \"/superuser\"\n" +
-                "            ]\n" +
-                "        },\n" +
+                "          \"groups\": [\n" +
+                "              \"/admin\",\n" +
+                "              \"/superuser\"\n" +
+                "          ]\n" +
+                "        ,\n" +
                 "        \"users_by_name\": {\n" +
                 "            \"alice\": {\n" +
                 "                \"customAttributes\": {},\n" +
@@ -52,8 +56,10 @@ public class StackableGroupMapperTest {
         ObjectMapper json = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        OpaQueryResult result = json.readValue(input, OpaQueryResult.class);
-        Assert.assertEquals("admin", result.groups.get(0));
-        Assert.assertEquals("superuser", result.groups.get(1));
+
+        Map<String, List<String>> result = (Map<String, List<String>>) json.readValue(input, HashMap.class).get("result");
+        List<String> groups = result.get("groups");
+        Assert.assertEquals("/admin", groups.get(0));
+        Assert.assertEquals("/superuser", groups.get(1));
     }
 }

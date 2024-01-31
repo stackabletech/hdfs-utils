@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.GroupMappingServiceProvider;
+import org.apache.hadoop.util.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,11 +14,18 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 public class StackableGroupMapper implements GroupMappingServiceProvider {
     public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.url";
+    public static final String OPA_MAPPING_GROUP_NAME_PROP = "hadoop.security.group.mapping.opa.list.name";
+    // response base field: see https://www.openpolicyagent.org/docs/latest/rest-api/#response-message
+    public static final String OPA_RESULT_FIELD = "result";
+    public final String mappingGroupName;
     private final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper json;
@@ -35,6 +43,11 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
             this.opaUri = URI.create(opaMappingUrl);
         } catch (Exception e) {
             throw new OpaException.UriInvalid(opaUri, e);
+        }
+
+        this.mappingGroupName = configuration.get(OPA_MAPPING_GROUP_NAME_PROP);
+        if (mappingGroupName == null) {
+            throw new RuntimeException("Config \"" + OPA_MAPPING_GROUP_NAME_PROP + "\" missing");
         }
 
         this.json = new ObjectMapper()
@@ -82,12 +95,30 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
 
         String responseBody = response.body();
         LOG.debug("Response body [{}]", responseBody);
+        List<String> groups = Lists.newArrayList();
 
-        OpaQueryResult result = json.readValue(responseBody, OpaQueryResult.class);
-        LOG.info("Groups for [{}]: [{}]", user, result.groups);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = (Map<String, Object>) json.readValue(responseBody, HashMap.class).get(OPA_RESULT_FIELD);
+        List<String> rawGroups = (List<String>) result.get(this.mappingGroupName);
 
-        return result.groups;
+        for (String rawGroup :  rawGroups) {
+            groups.add(removeSlashes.apply(rawGroup));
+        }
+
+        LOG.info("Groups for [{}]: [{}]", user, groups);
+
+        return groups;
     }
+
+    private final static UnaryOperator<String> removeSlashes = s -> {
+        if (s.startsWith("/")) {
+            s = s.substring(1);
+        }
+        if (s.endsWith("/")) {
+            s = s.substring(0, s.length() - 1);
+        }
+        return s;
+    };
 
     /**
      * Caches groups, no need to do that for this provider
