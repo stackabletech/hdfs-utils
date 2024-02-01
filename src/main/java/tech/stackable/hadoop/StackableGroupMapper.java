@@ -102,7 +102,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
         List<String> rawGroups = (List<String>) result.get(this.mappingGroupName);
 
         for (String rawGroup :  rawGroups) {
-            groups.add(removeSlashes.apply(rawGroup));
+            groups.add(stripSlashes.apply(rawGroup));
         }
 
         LOG.info("Groups for [{}]: [{}]", user, groups);
