@@ -7,7 +7,7 @@ metadata:
     opa.stackable.tech/bundle: "hdfs-group-mapping"
 data:
   test.rego: |
-    package hdfs-groups
+    package hdfsgroups
 
     # this will return the group data in this form:
     #    "result": {

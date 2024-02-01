@@ -57,7 +57,7 @@ Group mappings are resolved on the NameNode and the following configuration shou
 
 #### hadoop.security.group.mapping.opa.url
 
-* The Opa Server endpoint e.g. `"http://test-opa.default.svc.cluster.local:8081/v1/data/hdfs-groups"`
+* The Opa Server endpoint e.g. `"http://test-opa.default.svc.cluster.local:8081/v1/data/hdfsgroups"`
 
 #### hadoop.security.group.mapping.opa.list.name
 

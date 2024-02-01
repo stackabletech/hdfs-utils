@@ -43,7 +43,7 @@ spec:
           core-site.xml:
             # the mapper is only handled on the namenode so no need to apply this config to all roles
             hadoop.security.group.mapping: "tech.stackable.hadoop.StackableGroupMapper"
-            hadoop.security.group.mapping.opa.url: "http://test-opa.default.svc.cluster.local:8081/v1/data/hdfs-groups"
+            hadoop.security.group.mapping.opa.url: "http://test-opa.default.svc.cluster.local:8081/v1/data/hdfsgroups"
             hadoop.security.group.mapping.opa.list.name: "groups"
             # The operator adds a default static mapping when kerberos is activated, see:
             # https://github.com/stackabletech/hdfs-operator/blob/main/rust/operator-binary/src/kerberos.rs#L97-L101
