@@ -58,6 +58,9 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
             throw new RuntimeException("Config \"" + OPA_MAPPING_GROUP_NAME_PROP + "\" missing");
         }
 
+        LOG.info("OPA mapping URL [{}]", opaMappingUrl);
+        LOG.info("OPA mapping group [{}]", mappingGroupName);
+
         this.json = new ObjectMapper()
                 // https://github.com/stackabletech/trino-opa-authorizer/issues/24
                 // OPA server can send other fields, such as `decision_id`` when enabling decision logs

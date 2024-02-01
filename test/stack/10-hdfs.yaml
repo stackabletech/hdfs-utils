@@ -38,7 +38,7 @@ spec:
     roleGroups:
       default:
         envOverrides:
-          HADOOP_CLASSPATH: "/stackable/hadoop/share/hadoop/tools/lib/hdfs-group-mapper-0.1.0-SNAPSHOT.jar"
+          HADOOP_CLASSPATH: "/stackable/hadoop/share/hadoop/tools/lib/*.jar"
         configOverrides:
           core-site.xml:
             # the mapper is only handled on the namenode so no need to apply this config to all roles

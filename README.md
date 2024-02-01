@@ -47,7 +47,7 @@ Group mappings are resolved on the NameNode and the following configuration shou
 
 #### HADOOP_CLASSPATH
 
-* Fixed value of `"/stackable/hadoop/share/hadoop/tools/lib/hdfs-group-mapper-0.1.0-SNAPSHOT.jar"`
+* Fixed value of `"/stackable/hadoop/share/hadoop/tools/lib/*.jar"`
 
 ### configOverrides / `core-site.xml`
 
