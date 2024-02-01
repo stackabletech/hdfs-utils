@@ -110,7 +110,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
         return groups;
     }
 
-    private final static UnaryOperator<String> removeSlashes = s -> {
+    private final static UnaryOperator<String> stripSlashes = s -> {
         if (s.startsWith("/")) {
             s = s.substring(1);
         }
