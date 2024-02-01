@@ -31,8 +31,16 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     private final ObjectMapper json;
     private URI opaUri = null;
 
+    public enum HadoopConfig {
+        INSTANCE;
+        public Configuration getConfiguration() {
+            return new Configuration();
+        }
+    }
+
     public StackableGroupMapper() {
-        Configuration configuration = new Configuration();
+        // guaranteed to be only called once (Effective Java: Item 3)
+        Configuration configuration = HadoopConfig.INSTANCE.getConfiguration();
 
         String opaMappingUrl = configuration.get(OPA_MAPPING_URL_PROP);
         if (opaMappingUrl == null) {
