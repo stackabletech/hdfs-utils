@@ -12,11 +12,14 @@ data:
     # this will return the group data in this form:
     #    "result": {
     #        "groups": [
-    #            "/admin",
-    #            "/superuser"
+    #            "admin",
+    #            "superuser"
     #        ]
     #        ...
-    groups := users_by_name[input.username].groups
+    groups := {g |
+      raw = users_by_name[input.username].groups[_]
+      g := trim(raw, "/")
+    }
 
     # returning data in the form presented by the UIF
     users_by_name := {

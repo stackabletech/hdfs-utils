@@ -19,8 +19,8 @@ public class StackableGroupMapperTest {
         "{\n"
             + "    \"result\": {\n"
             + "          \"groups\": [\n"
-            + "              \"/admin\",\n"
-            + "              \"/superuser\"\n"
+            + "              \"admin\",\n"
+            + "              \"superuser\"\n"
             + "          ]\n"
             + "        ,\n"
             + "        \"users_by_name\": {\n"
@@ -61,7 +61,7 @@ public class StackableGroupMapperTest {
     Map<String, List<String>> result =
         (Map<String, List<String>>) json.readValue(input, HashMap.class).get("result");
     List<String> groups = result.get("groups");
-    Assert.assertEquals("/admin", groups.get(0));
-    Assert.assertEquals("/superuser", groups.get(1));
+    Assert.assertEquals("admin", groups.get(0));
+    Assert.assertEquals("superuser", groups.get(1));
   }
 }

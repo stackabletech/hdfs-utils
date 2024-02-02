@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Objects;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.GroupMappingServiceProvider;
-import org.apache.hadoop.util.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,30 +113,15 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
 
     String responseBody = response.body();
     LOG.debug("Response body [{}]", responseBody);
-    List<String> groups = Lists.newArrayList();
 
     @SuppressWarnings("unchecked")
     Map<String, Object> result =
         (Map<String, Object>) json.readValue(responseBody, HashMap.class).get(OPA_RESULT_FIELD);
-    List<String> rawGroups = (List<String>) result.get(this.mappingGroupName);
-
-    for (String rawGroup : rawGroups) {
-      groups.add(stripSlashes(rawGroup));
-    }
+    List<String> groups = (List<String>) result.get(this.mappingGroupName);
 
     LOG.info("Groups for [{}]: [{}]", user, groups);
 
     return groups;
-  }
-
-  private static String stripSlashes(String s) {
-    if (s.startsWith("/")) {
-      s = s.substring(1);
-    }
-    if (s.endsWith("/")) {
-      s = s.substring(0, s.length() - 1);
-    }
-    return s;
   }
 
   /** Caches groups, no need to do that for this provider */
