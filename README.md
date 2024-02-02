@@ -3,7 +3,7 @@
 [Stackable Data Platform](https://stackable.tech/) | [Platform Docs](https://docs.stackable.tech/) | [Discussions](https://github.com/orgs/stackabletech/discussions) | [Discord](https://discord.gg/7kZ3BNnCAF)
 
 This projects is a plugin for Apache Hadoop, which can look up groups for users in an OpenPolicyAgent (OPA) instance.
-It is intended to be used with the [Stackable Data Platform](https://stackable.tech) 
+It is intended to be used with the [Stackable Data Platform](https://stackable.tech)
 
 ## Description
 
