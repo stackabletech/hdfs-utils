@@ -33,8 +33,9 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
 
     public enum HadoopConfig {
         INSTANCE;
+        private Configuration configuration = new Configuration();
         public Configuration getConfiguration() {
-            return new Configuration();
+            return this.configuration;
         }
     }
 
