@@ -161,14 +161,6 @@
               <goal>shade</goal>
             </goals>
             <phase>package</phase>
-            <configuration>
-              <relocations>
-                <relocation>
-                  <pattern>com.fasterxml</pattern>
-                  <shadedPattern>org.shaded.fasterxml</shadedPattern>
-                </relocation>
-              </relocations>
-            </configuration>
           </execution>
         </executions>
       </plugin>
