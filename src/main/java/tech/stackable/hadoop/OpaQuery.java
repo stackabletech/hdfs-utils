@@ -9,6 +9,13 @@ public class OpaQuery {
     this.input = input;
   }
 
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", OpaQuery.class.getSimpleName() + "[", "]")
+        .add("input=" + input)
+        .toString();
+  }
+
   public static class OpaQueryInput {
     public final String username;
 
@@ -22,12 +29,5 @@ public class OpaQuery {
           .add("username='" + username + "'")
           .toString();
     }
-  }
-
-  @Override
-  public String toString() {
-    return new StringJoiner(", ", OpaQuery.class.getSimpleName() + "[", "]")
-        .add("input=" + input)
-        .toString();
   }
 }
