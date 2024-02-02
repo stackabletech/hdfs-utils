@@ -87,9 +87,11 @@ bin/hdfs groups
 ```
 
 The last command will yield something like this:
+
 ```shell
 nn/simple-hdfs.default.svc.cluster.local@CLUSTER.LOCAL : admin superuser
 ```
+
 and the Hadoop logs will show that the lookup has taken place:
 
 ```
@@ -97,3 +99,4 @@ and the Hadoop logs will show that the lookup has taken place:
 - Opa response [{"result":{"groups":{"groups":["/admin","/superuser"]},"users_by_name":{"alice":{"customAttributes":{},"groups":["/superset-admin"],"id":"af07f12c-1234-40a7-93e0-874537bdf3f5","username":"alice"},"bob":{"customAttributes":{},"groups":["/admin"],"id":"af07f12c-2345-40a7-93e0-874537bdf3f5","username":"bob"},"nn":{"customAttributes":{},"groups":["/admin","/superuser"],"id":"af07f12c-7890-40a7-93e0-874537bdf3f5","username":"nn"},"stackable":{"customAttributes":{},"groups":["/admin","/superuser"],"id":"af07f12c-3456-40a7-93e0-874537bdf3f5","username":"stackable"}}}}
 - Groups for [nn]: [[admin, superuser]]
 ```
+
