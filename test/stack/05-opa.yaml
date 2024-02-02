@@ -58,4 +58,4 @@ spec:
     pullPolicy: IfNotPresent
   servers:
     roleGroups:
-      default: {}
+      default: { }
