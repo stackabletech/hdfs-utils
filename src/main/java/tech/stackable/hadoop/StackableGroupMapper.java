@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.UnaryOperator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.GroupMappingServiceProvider;
 import org.apache.hadoop.util.Lists;
@@ -20,20 +19,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StackableGroupMapper implements GroupMappingServiceProvider {
+
+  private static final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
   public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.url";
-  public static final String OPA_MAPPING_GROUP_NAME_PROP =
+  private static final String OPA_MAPPING_GROUP_NAME_PROP =
       "hadoop.security.group.mapping.opa.list.name";
   // response base field: see https://www.openpolicyagent.org/docs/latest/rest-api/#response-message
-  public static final String OPA_RESULT_FIELD = "result";
-  public final String mappingGroupName;
-  private final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
+  private static final String OPA_RESULT_FIELD = "result";
+  private final String mappingGroupName;
+
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private final ObjectMapper json;
-  private URI opaUri = null;
+  private URI opaUri;
 
   public enum HadoopConfig {
     INSTANCE;
-    private Configuration configuration = new Configuration();
+    private final Configuration configuration = new Configuration();
+
     public Configuration getConfiguration() {
       return this.configuration;
     }
@@ -83,11 +85,11 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
   public List<String> getGroups(String user) throws IOException {
     LOG.info("Calling StackableGroupMapper.getGroups for user [{}]", user);
 
-    HttpResponse<String> response = null;
     OpaQuery query = new OpaQuery(new OpaQuery.OpaQueryInput(user));
     String body = json.writeValueAsString(query);
 
     LOG.debug("Request body [{}]", body);
+    HttpResponse<String> response = null;
     try {
       response =
           httpClient.send(
@@ -120,7 +122,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     List<String> rawGroups = (List<String>) result.get(this.mappingGroupName);
 
     for (String rawGroup : rawGroups) {
-      groups.add(stripSlashes.apply(rawGroup));
+      groups.add(stripSlashes(rawGroup));
     }
 
     LOG.info("Groups for [{}]: [{}]", user, groups);
@@ -128,16 +130,15 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     return groups;
   }
 
-  private static final UnaryOperator<String> stripSlashes =
-      s -> {
-        if (s.startsWith("/")) {
-          s = s.substring(1);
-        }
-        if (s.endsWith("/")) {
-          s = s.substring(0, s.length() - 1);
-        }
-        return s;
-      };
+  private static String stripSlashes(String s) {
+    if (s.startsWith("/")) {
+      s = s.substring(1);
+    }
+    if (s.endsWith("/")) {
+      s = s.substring(0, s.length() - 1);
+    }
+    return s;
+  }
 
   /** Caches groups, no need to do that for this provider */
   @Override

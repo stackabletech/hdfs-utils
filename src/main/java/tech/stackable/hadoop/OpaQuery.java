@@ -1,5 +1,7 @@
 package tech.stackable.hadoop;
 
+import java.util.StringJoiner;
+
 public class OpaQuery {
   public final OpaQueryInput input;
 
@@ -13,5 +15,19 @@ public class OpaQuery {
     public OpaQueryInput(String user) {
       this.username = user;
     }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", OpaQueryInput.class.getSimpleName() + "[", "]")
+          .add("username='" + username + "'")
+          .toString();
+    }
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", OpaQuery.class.getSimpleName() + "[", "]")
+        .add("input=" + input)
+        .toString();
   }
 }

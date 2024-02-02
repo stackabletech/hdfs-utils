@@ -7,7 +7,7 @@ import java.net.http.HttpResponse;
 
 public abstract class OpaException extends RuntimeException {
 
-  public OpaException(String message, Throwable cause) {
+  protected OpaException(String message, Throwable cause) {
     super(message, cause);
   }
 
