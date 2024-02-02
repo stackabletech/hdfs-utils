@@ -36,15 +36,15 @@ The Group Mapper only needs the group listing, which can be requested specifical
   "result": {
     "groups": {
       "groups": [
-        "/admin",
-        "/superuser"
+        "admin",
+        "superuser"
       ]
     }
   }
 }
 ```
 
-The leading slash is required by Opa/Keycloak to allow the definition of subgroups, but this is removed by the group mapper before returning this list of strings to the internal calling routine.
+The leading slash is required by Opa/Keycloak to allow the definition of subgroups, but this should be removed by the rego rule before returning this list of strings to the mapper.
 
 ## Configuration
 
@@ -103,7 +103,7 @@ and the Hadoop logs will show that the lookup has taken place:
 
 ```text
 - Calling StackableGroupMapper.getGroups for user [nn]
-- Opa response [{"result":{"groups":{"groups":["/admin","/superuser"]},"users_by_name":{"alice":{"customAttributes":{},"groups":["/superset-admin"],"id":"af07f12c-1234-40a7-93e0-874537bdf3f5","username":"alice"},"bob":{"customAttributes":{},"groups":["/admin"],"id":"af07f12c-2345-40a7-93e0-874537bdf3f5","username":"bob"},"nn":{"customAttributes":{},"groups":["/admin","/superuser"],"id":"af07f12c-7890-40a7-93e0-874537bdf3f5","username":"nn"},"stackable":{"customAttributes":{},"groups":["/admin","/superuser"],"id":"af07f12c-3456-40a7-93e0-874537bdf3f5","username":"stackable"}}}}
+- Opa response [{"result":{"groups":{"groups":["admin","superuser"]},"users_by_name":{"alice":{"customAttributes":{},"groups":["/superset-admin"],"id":"af07f12c-1234-40a7-93e0-874537bdf3f5","username":"alice"},"bob":{"customAttributes":{},"groups":["/admin"],"id":"af07f12c-2345-40a7-93e0-874537bdf3f5","username":"bob"},"nn":{"customAttributes":{},"groups":["/admin","/superuser"],"id":"af07f12c-7890-40a7-93e0-874537bdf3f5","username":"nn"},"stackable":{"customAttributes":{},"groups":["/admin","/superuser"],"id":"af07f12c-3456-40a7-93e0-874537bdf3f5","username":"stackable"}}}}
 - Groups for [nn]: [[admin, superuser]]
 ```
 
