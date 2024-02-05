@@ -1,6 +1,7 @@
 package tech.stackable.hadoop;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 public class StackableGroupMapper implements GroupMappingServiceProvider {
 
   private static final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
+
   public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.url";
   private static final String OPA_MAPPING_GROUP_NAME_PROP =
       "hadoop.security.group.mapping.opa.list.name";
@@ -31,22 +33,13 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
   private final ObjectMapper json;
   private URI opaUri;
 
-  public enum HadoopConfig {
-    INSTANCE;
-    private final Configuration configuration = new Configuration();
-
-    public Configuration getConfiguration() {
-      return this.configuration;
-    }
-  }
-
   public StackableGroupMapper() {
-    // guaranteed to be only called once (Effective Java: Item 3)
-    Configuration configuration = HadoopConfig.INSTANCE.getConfiguration();
+    // Guaranteed to be only called once (Effective Java: Item 3)
+    Configuration configuration = HadoopConfigSingleton.INSTANCE.getConfiguration();
 
     String opaMappingUrl = configuration.get(OPA_MAPPING_URL_PROP);
     if (opaMappingUrl == null) {
-      throw new RuntimeException("Config \"" + OPA_MAPPING_URL_PROP + "\" missing");
+      throw new OpaException.UriMissing(OPA_MAPPING_URL_PROP);
     }
 
     try {
@@ -70,7 +63,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
             // We could add all the fields we *currently* know, but it's more future-proof to ignore
             // any unknown fields.
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            // do not include null values
+            // Do not include null values
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
   }
 
@@ -81,11 +74,17 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
    * @return list of groups for a given user
    */
   @Override
-  public List<String> getGroups(String user) throws IOException {
+  public List<String> getGroups(String user) {
     LOG.info("Calling StackableGroupMapper.getGroups for user [{}]", user);
 
-    OpaQuery query = new OpaQuery(new OpaQuery.OpaQueryInput(user));
-    String body = json.writeValueAsString(query);
+    OpaGroupsQuery query = new OpaGroupsQuery(new OpaGroupsQuery.OpaGroupsQueryInput(user));
+
+    String body;
+    try {
+      body = json.writeValueAsString(query);
+    } catch (JsonProcessingException e) {
+      throw new OpaException.SerializeFailed(e);
+    }
 
     LOG.debug("Request body [{}]", body);
     HttpResponse<String> response = null;
@@ -97,9 +96,10 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
                   .POST(HttpRequest.BodyPublishers.ofString(body))
                   .build(),
               HttpResponse.BodyHandlers.ofString());
-      LOG.info("Opa response [{}]", response.body());
-    } catch (InterruptedException e) {
+      LOG.debug("Opa response [{}]", response.body());
+    } catch (Exception e) {
       LOG.error(e.getMessage());
+      throw new OpaException.QueryFailed(e);
     }
 
     switch (Objects.requireNonNull(response).statusCode()) {
@@ -111,15 +111,16 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
         throw new OpaException.OpaServerError(query.toString(), response);
     }
 
-    String responseBody = response.body();
-    LOG.debug("Response body [{}]", responseBody);
+    List<String> groups;
+    try {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> result = (Map<String, Object>) json.readValue(response.body(), HashMap.class).get(OPA_RESULT_FIELD);
+      groups = (List<String>) result.get(this.mappingGroupName);
+    } catch (Exception e) {
+      throw new OpaException.DeserializeFailed(e);
+    }
 
-    @SuppressWarnings("unchecked")
-    Map<String, Object> result =
-        (Map<String, Object>) json.readValue(responseBody, HashMap.class).get(OPA_RESULT_FIELD);
-    List<String> groups = (List<String>) result.get(this.mappingGroupName);
-
-    LOG.info("Groups for [{}]: [{}]", user, groups);
+    LOG.debug("Groups for [{}]: [{}]", user, groups);
 
     return groups;
   }
