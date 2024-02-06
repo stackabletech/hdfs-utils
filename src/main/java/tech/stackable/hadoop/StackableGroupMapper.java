@@ -53,8 +53,8 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
       throw new RuntimeException("Config \"" + OPA_MAPPING_GROUP_NAME_PROP + "\" missing");
     }
 
-    LOG.info("OPA mapping URL [{}]", opaMappingUrl);
-    LOG.info("OPA mapping group [{}]", mappingGroupName);
+    LOG.debug("OPA mapping URL [{}]", opaMappingUrl);
+    LOG.debug("OPA mapping group [{}]", mappingGroupName);
 
     this.json =
         new ObjectMapper()
