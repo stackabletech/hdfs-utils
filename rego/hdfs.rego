@@ -49,10 +49,12 @@ action_hierarchy := {
 action_for_operation := {
     "getfileinfo": "ro",
     "listStatus": "ro",
+    "mkdirs": "full", # TODO check if this is ok
     "delete": "full",
+    "rename": "full", # FIXME: Should check source *and* target
 }
 
-groups := {"admin": ["admins"], "alice": ["developers"], "bob": []}
+groups := {"admin": ["admins"], "alice": ["developers"], "bob": [], "HTTP": ["admins"]}
 
 acls := [
     {
