@@ -49,7 +49,6 @@ data:
         action_hierarchy[action][_] == action_for_operation[operation]
     }
 
-
     action_hierarchy := {
         "full": ["full", "rw","ro"],
         "rw": ["rw", "ro"],
@@ -59,37 +58,45 @@ data:
     action_for_operation := {
         "getfileinfo": "ro",
         "listStatus": "ro",
+        "mkdirs": "full", # TODO check if this is ok
         "delete": "full",
+        "rename": "full", # FIXME: Should check source *and* target
     }
 
-    groups := {"HTTP": ["http-group"]}
+    groups := {"admin": ["admins"], "alice": ["developers"], "bob": [], "HTTP": ["admins"]}
 
     acls := [
-    	{
-    		"identity": "user:HTTP",
-    		"action": "full",
-    		"resource": "hdfs:file:/hosts",
-    	},
         {
-            "identity": "group:http-group",
+            "identity": "group:admins",
             "action": "full",
             "resource": "hdfs:dir:/",
         },
         {
-            "identity": "user:HTTP",
+            "identity": "group:developers",
             "action": "full",
-            "resource": "hdfs:dir:/ro/full/",
+            "resource": "hdfs:dir:/developers/",
+        },
+        {
+            "identity": "user:alice",
+            "action": "full",
+            "resource": "hdfs:dir:/alice/",
+        },
+        {
+            "identity": "user:bob",
+            "action": "full",
+            "resource": "hdfs:dir:/bob/",
+        },
+        {
+            "identity": "user:bob",
+            "action": "ro",
+            "resource": "hdfs:dir:/developers/",
+        },
+            {
+            "identity": "user:bob",
+            "action": "rw",
+            "resource": "hdfs:file:/developers/file-from-bob",
         },
     ]
-
-    # hdfs:file:/hosts
-    # hdfs:file:/hosts/andrew_*
-    # hdfs:dir:/hosts/
-    # kafka:topic:events
-    # trino:table:tpch.sf1.customers
-    # trino:schema:tpch.sf1
-    # trino:catalog:tpch
-
   hdfs-groups.rego: |
     package hdfs_groups
 
