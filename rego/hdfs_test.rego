@@ -45,6 +45,16 @@ test_admin_access_to_developers if {
 
 
 
+test_alice_access_to_alice_folder if {
+    allow with input as {
+        "callerUgi": {
+            "shortUserName": "alice"
+        },
+        "path": "/alice",
+        "operationName": "getfileinfo",
+    }
+}
+
 test_alice_access_to_alice if {
     allow with input as {
         "callerUgi": {

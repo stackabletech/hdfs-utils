@@ -37,10 +37,15 @@ data:
         resource == concat("", ["hdfs:file:", file])
     }
 
+    # Resource mentions the directory explicitly
+    matches_resource(file, resource) if {
+        trim_suffix(resource, "/") == concat("", ["hdfs:dir:", file])
+    }
+
     # Resource mentions a folder higher up the tree, which will will grant access recursively
     matches_resource(file, resource) if {
         startswith(resource, "hdfs:dir:/")
-        # dirs need to have a trailing slash
+        # directories need to have a trailing slash
         endswith(resource, "/")
         startswith(file, trim_prefix(resource, "hdfs:dir:"))
     }
@@ -58,32 +63,39 @@ data:
     action_for_operation := {
         "getfileinfo": "ro",
         "listStatus": "ro",
-        "mkdirs": "full", # TODO check if this is ok
-        "delete": "full",
-        "rename": "full", # FIXME: Should check source *and* target
+        "open": "ro",
+        "mkdirs": "rw", # TODO check if this is ok
+        "delete": "rw",
+        "rename": "rw", # The "rename" operation will be actually called on both - the source and the target location.
+                        # Because of this you need to have rw permissions on the source and target file - which is desired
     }
 
-    groups := {"admin": ["admins"], "alice": ["developers"], "bob": [], "HTTP": ["admins"]}
+    groups := {"admin": ["admins"], "alice": ["developers"], "bob": [], "HTTP": ["developers"]}
 
     acls := [
         {
             "identity": "group:admins",
-            "action": "full",
+            "action": "rw",
             "resource": "hdfs:dir:/",
         },
         {
             "identity": "group:developers",
-            "action": "full",
+            "action": "rw",
             "resource": "hdfs:dir:/developers/",
         },
         {
+            "identity": "group:developers",
+            "action": "ro",
+            "resource": "hdfs:dir:/developers-ro/",
+        },
+        {
             "identity": "user:alice",
-            "action": "full",
+            "action": "rw",
             "resource": "hdfs:dir:/alice/",
         },
         {
             "identity": "user:bob",
-            "action": "full",
+            "action": "rw",
             "resource": "hdfs:dir:/bob/",
         },
         {
@@ -91,7 +103,7 @@ data:
             "action": "ro",
             "resource": "hdfs:dir:/developers/",
         },
-            {
+        {
             "identity": "user:bob",
             "action": "rw",
             "resource": "hdfs:file:/developers/file-from-bob",
