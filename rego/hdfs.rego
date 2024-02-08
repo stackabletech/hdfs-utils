@@ -57,11 +57,15 @@ action_for_operation := {
     "open": "ro",
     "mkdirs": "rw", # TODO check if this is ok
     "delete": "rw",
-    "rename": "rw", # The "rename" operation will be actually called on both - the source and the target location.
-                    # Because of this you need to have rw permissions on the source and target file - which is desired
+    # The "rename" operation will be actually called on both - the source and the target location.
+    # Because of this you need to have rw permissions on the source and target file - which is desired
+    "rename": "rw",
+    # The hdfs codebase still does some calls to the deprecated API, which is missing the operationName, so we just
+    # assume the worst and require "rw" access.
+    "deprecatedCheckPermissionApi": "rw",
 }
 
-groups := {"admin": ["admins"], "alice": ["developers"], "bob": [], "HTTP": ["developers"]}
+groups := {"admin": ["admins"], "alice": ["developers"], "bob": []}
 
 acls := [
     {

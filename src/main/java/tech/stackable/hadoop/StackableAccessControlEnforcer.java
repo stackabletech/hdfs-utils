@@ -14,12 +14,12 @@ import org.apache.hadoop.hdfs.server.blockmanagement.DatanodeStorageInfo;
 import org.apache.hadoop.hdfs.server.namenode.INode;
 import org.apache.hadoop.hdfs.server.namenode.INodeAttributeProvider;
 import org.apache.hadoop.hdfs.server.namenode.INodeAttributes;
+import org.apache.hadoop.ipc.CallerContext;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -87,10 +87,34 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
 
         // We are using the new "checkPermissionWithContext" API, as indicated by the log statement
         // "Use the new authorization provider API". All the calls to this old function only happen when opType == null,
-        // in which case we have no idea on what to authorize at, so we just allow it.
-        // FIXME: Needs testing
+        // in which case we have no idea on what to authorize at, so we put in the operationName "deprecatedCheckPermissionApi".
+        // Rego rules need to check for the maximum access level, as this can be potentially any operation.
 
-        // throw new AccessControlException("The HdfsOpaAccessControlEnforcer does not implement the old checkPermission API.");
+        INodeAttributeProvider.AuthorizationContext.Builder builder =
+                new INodeAttributeProvider.AuthorizationContext.Builder();
+        builder.fsOwner(fsOwner).
+                supergroup(supergroup).
+                callerUgi(ugi).
+                inodeAttrs(inodeAttrs).
+                inodes(inodes).
+                pathByNameArr(pathByNameArr).
+                snapshotId(snapshotId).
+                path(path).
+                ancestorIndex(ancestorIndex).
+                doCheckOwner(doCheckOwner).
+                ancestorAccess(ancestorAccess).
+                parentAccess(parentAccess).
+                access(access).
+                subAccess(subAccess).
+                ignoreEmptyDir(ignoreEmptyDir).
+                operationName("deprecatedCheckPermissionApi").
+                callerContext(CallerContext.getCurrent());
+        this.checkPermissionWithContext(builder.build());
+
+//        throw new AccessControlException("The HdfsOpaAccessControlEnforcer does not implement the old checkPermission API. Passed arguments: "
+//            + "fsOwner: " + fsOwner + ", supergroup: " + supergroup + ", ugi: " + ugi + ", path: " + path + ", ancestorIndex:" + ancestorIndex
+//                + ", doCheckOwner: " + doCheckOwner + ", ancestorAccess: " + ancestorAccess + ", parentAccess: " + parentAccess
+//                + ", subAccess: " + subAccess + ", ignoreEmptyDir: " + ignoreEmptyDir);
     }
 
     @Override
@@ -104,7 +128,7 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
             throw new OpaException.SerializeFailed(e);
         }
 
-        LOG.debug("Request body [{}]", body);
+        LOG.info("Request body [{}]", body);
         HttpResponse<String> response = null;
         try {
             response =
