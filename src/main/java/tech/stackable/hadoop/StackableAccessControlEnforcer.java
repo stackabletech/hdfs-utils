@@ -14,7 +14,6 @@ import org.apache.hadoop.hdfs.server.blockmanagement.DatanodeStorageInfo;
 import org.apache.hadoop.hdfs.server.namenode.INode;
 import org.apache.hadoop.hdfs.server.namenode.INodeAttributeProvider;
 import org.apache.hadoop.hdfs.server.namenode.INodeAttributes;
-import org.apache.hadoop.ipc.CallerContext;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
@@ -26,6 +25,17 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Objects;
 
+// As of 2024-02-09 INodeAttributeProvider.AccessControlEnforcer has two functions: The old - deprecated -
+// checkPermission and the new checkPermissionWithContext. HDFS uses reflection to check if the authorizer
+// supports the new API (which we do) and uses that in this case. This is also indicated by the log statement
+// "Use the new authorization provider API" during startup, see https://github.com/apache/hadoop/blob/50d256ef3c2531563bc6ba96dec6b78e154b4697/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/namenode/FSDirectory.java#L245
+// FSPermissionChecker has a ThreadLocal operationType, which needs to be set to e.g. "create", "delete" or
+// "rename" prior to calling the FSPermissionChecker.checkPermission function, as it will actually check if
+// operationType is null and will still use the old API in this case! But the old API does not have the
+// information about the operationType, which makes it hard to impossible to authorize the request. As a
+// consequence we only support the new API and will make sure no HDFS code path calls the old API. This required
+// minor patches to HDFS, as it was e.g. missing a call to FSPermissionChecker.setOperationType("create") in
+// FSNamesystem.startFileInt (this claim needs to be validated though).
 public class StackableAccessControlEnforcer implements INodeAttributeProvider.AccessControlEnforcer {
 
     private static final Logger LOG = LoggerFactory.getLogger(StackableAccessControlEnforcer.class);
@@ -83,38 +93,17 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
                                 int ancestorIndex, boolean doCheckOwner, FsAction ancestorAccess,
                                 FsAction parentAccess, FsAction access, FsAction subAccess,
                                 boolean ignoreEmptyDir) throws AccessControlException {
-        LOG.info("checkPermission called");
+        LOG.warn("checkPermission called");
 
-        // We are using the new "checkPermissionWithContext" API, as indicated by the log statement
-        // "Use the new authorization provider API". All the calls to this old function only happen when opType == null,
-        // in which case we have no idea on what to authorize at, so we put in the operationName "deprecatedCheckPermissionApi".
-        // Rego rules need to check for the maximum access level, as this can be potentially any operation.
-
-        INodeAttributeProvider.AuthorizationContext.Builder builder =
-                new INodeAttributeProvider.AuthorizationContext.Builder();
-        builder.fsOwner(fsOwner).
-                supergroup(supergroup).
-                callerUgi(ugi).
-                inodeAttrs(inodeAttrs).
-                inodes(inodes).
-                pathByNameArr(pathByNameArr).
-                snapshotId(snapshotId).
-                path(path).
-                ancestorIndex(ancestorIndex).
-                doCheckOwner(doCheckOwner).
-                ancestorAccess(ancestorAccess).
-                parentAccess(parentAccess).
-                access(access).
-                subAccess(subAccess).
-                ignoreEmptyDir(ignoreEmptyDir).
-                operationName("deprecatedCheckPermissionApi").
-                callerContext(CallerContext.getCurrent());
-        this.checkPermissionWithContext(builder.build());
-
-//        throw new AccessControlException("The HdfsOpaAccessControlEnforcer does not implement the old checkPermission API. Passed arguments: "
-//            + "fsOwner: " + fsOwner + ", supergroup: " + supergroup + ", ugi: " + ugi + ", path: " + path + ", ancestorIndex:" + ancestorIndex
-//                + ", doCheckOwner: " + doCheckOwner + ", ancestorAccess: " + ancestorAccess + ", parentAccess: " + parentAccess
-//                + ", subAccess: " + subAccess + ", ignoreEmptyDir: " + ignoreEmptyDir);
+        new Throwable().printStackTrace();
+        throw new AccessControlException("The HdfsOpaAccessControlEnforcer does not implement the old checkPermission API. " +
+                "This should not happen, as all HDFS code paths should call the new API. " +
+                "I dumped the stack trace for you (check active namenode logs), so you can figure out which code path it was. " +
+                "Please report all of that to author of the OPA authorizer (We don't have a stable GitHub link yet, sorry!) " +
+                "Passed arguments: " +
+                "fsOwner: " + fsOwner + ", supergroup: " + supergroup + ", ugi: " + ugi + ", path: " + path + ", ancestorIndex:" + ancestorIndex +
+                ", doCheckOwner: " + doCheckOwner + ", ancestorAccess: " + ancestorAccess + ", parentAccess: " + parentAccess +
+                ", subAccess: " + subAccess + ", ignoreEmptyDir: " + ignoreEmptyDir);
     }
 
     @Override
