@@ -4,11 +4,26 @@ import rego.v1
 
 default allow = false
 
+# HDFS authorizer
 allow if {
     some acl in acls
     matches_identity(input.callerUgi.shortUserName, acl.identity)
     matches_resource(input.path, acl.resource)
     action_sufficient_for_operation(acl.action, input.operationName)
+}
+
+# HDFS group mapper
+# This will return the group data in this form:
+#    "result": {
+#        "groups": [
+#            "admin",
+#            "developers"
+#        ]
+#        ...
+groups := {group |
+    raw = groups_for_user[input.username][_]
+    # Keycloak groups have trailing slashes
+    group := trim_prefix(raw, "/")
 }
 
 # Identity mentions the user explicitly
@@ -18,10 +33,9 @@ matches_identity(user, identity) if {
 
 # Identity mentions group the user is part of
 matches_identity(user, identity) if {
-    some group in groups[user]
+    some group in groups_for_user[user]
     identity == concat("", ["group:", group])
 }
-
 
 # Resource mentions the file explicitly
 matches_resource(file, resource) if {
@@ -55,7 +69,7 @@ action_for_operation := {
     "getfileinfo": "ro",
     "listStatus": "ro",
     "open": "ro",
-    "mkdirs": "rw", # TODO check if this is ok
+    "mkdirs": "rw",
     "create": "rw",
     "delete": "rw",
     # The "rename" operation will be actually called on both - the source and the target location.
@@ -63,7 +77,7 @@ action_for_operation := {
     "rename": "rw",
 }
 
-groups := {"admin": ["admins"], "alice": ["developers"], "bob": []}
+groups_for_user := {"admin": ["admins"], "alice": ["developers"], "bob": []}
 
 acls := [
     {

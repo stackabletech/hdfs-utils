@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,6 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.GroupMappingServiceProvider;
 import org.slf4j.Logger;
@@ -22,12 +23,9 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
 
   private static final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
 
-  public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.url";
-  private static final String OPA_MAPPING_GROUP_NAME_PROP =
-      "hadoop.security.group.mapping.opa.list.name";
+  public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.policy.url";
   // response base field: see https://www.openpolicyagent.org/docs/latest/rest-api/#response-message
   private static final String OPA_RESULT_FIELD = "result";
-  private final String mappingGroupName;
 
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private final ObjectMapper json;
@@ -48,13 +46,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
       throw new OpaException.UriInvalid(opaUri, e);
     }
 
-    this.mappingGroupName = configuration.get(OPA_MAPPING_GROUP_NAME_PROP);
-    if (mappingGroupName == null) {
-      throw new RuntimeException("Config \"" + OPA_MAPPING_GROUP_NAME_PROP + "\" missing");
-    }
-
     LOG.debug("OPA mapping URL [{}]", opaMappingUrl);
-    LOG.debug("OPA mapping group [{}]", mappingGroupName);
 
     this.json =
         new ObjectMapper()
@@ -65,6 +57,10 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             // Do not include null values
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+  }
+
+  private static class OpaQueryResult {
+    public List<String> result;
   }
 
   /**
@@ -111,14 +107,13 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
         throw new OpaException.OpaServerError(query.toString(), response);
     }
 
-    List<String> groups;
+    OpaQueryResult result;
     try {
-      @SuppressWarnings("unchecked")
-      Map<String, Object> result = (Map<String, Object>) json.readValue(response.body(), HashMap.class).get(OPA_RESULT_FIELD);
-      groups = (List<String>) result.get(this.mappingGroupName);
-    } catch (Exception e) {
+      result = json.readValue(response.body(), OpaQueryResult.class);
+    } catch (JsonProcessingException e) {
       throw new OpaException.DeserializeFailed(e);
     }
+    List<String> groups = result.result;
 
     LOG.debug("Groups for [{}]: [{}]", user, groups);
 

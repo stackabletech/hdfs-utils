@@ -62,13 +62,9 @@ Group mappings are resolved on the NameNode and the following configuration shou
 
 * Fixed value of `"tech.stackable.hadoop.StackableGroupMapper"`
 
-#### hadoop.security.group.mapping.opa.url
+#### hadoop.security.group.mapping.opa.policy.url
 
-* The Opa Server endpoint e.g. `"http://opa.default.svc.cluster.local:8081/v1/data/hdfsgroups"`
-
-#### hadoop.security.group.mapping.opa.list.name
-
-* Opa responses have a [root field](https://www.openpolicyagent.org/docs/latest/rest-api/#response-message) called `result`: the result itself - in this case of a list of user groups - is a top-level field within the root field and is configurable i.e. the group mapper just needs to look up this field from the response and this is passed in the configuration. This means that both the output format of the rego rule and the corresponding response field are configured independently of the group mapper.
+* The Opa Server endpoint e.g. `"http://opa.default.svc.cluster.local:8081/v1/data/hdfs/groups"`
 
 #### hadoop.user.group.static.mapping.overrides
 
