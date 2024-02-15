@@ -47,7 +47,7 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
     private URI opaUri;
 
     public StackableAccessControlEnforcer() {
-        LOG.info("Starting StackableAccessControlEnforcer");
+        LOG.debug("Starting StackableAccessControlEnforcer");
 
         // Guaranteed to be only called once (Effective Java: Item 3)
         Configuration configuration = HadoopConfigSingleton.INSTANCE.getConfiguration();
@@ -78,7 +78,7 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
                 // Otherwise we get com.fasterxml.jackson.databind.JsonMappingException: Infinite recursion (StackOverflowError)
                 .addMixIn(DatanodeDescriptor.class, DatanodeDescriptorMixin.class);
 
-        LOG.info("Started HdfsOpaAccessControlEnforcer");
+        LOG.debug("Started HdfsOpaAccessControlEnforcer");
     }
 
     private static class OpaQueryResult {
@@ -117,7 +117,7 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
             throw new OpaException.SerializeFailed(e);
         }
 
-        LOG.info("Request body [{}]", body);
+        LOG.debug("Request body: {}", body);
         HttpResponse<String> response = null;
         try {
             response =
@@ -127,7 +127,7 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
                                     .POST(HttpRequest.BodyPublishers.ofString(body))
                                     .build(),
                             HttpResponse.BodyHandlers.ofString());
-            LOG.debug("Opa response [{}]", response.body());
+            LOG.debug("Opa response: {}", response.body());
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new OpaException.QueryFailed(e);

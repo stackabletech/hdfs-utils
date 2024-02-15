@@ -11,12 +11,12 @@ public class StackableAuthorizer extends INodeAttributeProvider {
 
     @Override
     public void start() {
-        LOG.info("Starting HdfsOpaAuthorizer");
+        LOG.debug("Starting HdfsOpaAuthorizer");
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping HdfsOpaAuthorizer");
+        LOG.debug("Stopping HdfsOpaAuthorizer");
     }
 
     @Override

@@ -46,7 +46,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
       throw new OpaException.UriInvalid(opaUri, e);
     }
 
-    LOG.debug("OPA mapping URL [{}]", opaMappingUrl);
+    LOG.debug("OPA mapping URL: {}", opaMappingUrl);
 
     this.json =
         new ObjectMapper()
@@ -71,7 +71,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
    */
   @Override
   public List<String> getGroups(String user) {
-    LOG.info("Calling StackableGroupMapper.getGroups for user [{}]", user);
+    LOG.info("Calling StackableGroupMapper.getGroups for user \"{}\"", user);
 
     OpaGroupsQuery query = new OpaGroupsQuery(new OpaGroupsQuery.OpaGroupsQueryInput(user));
 
@@ -82,7 +82,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
       throw new OpaException.SerializeFailed(e);
     }
 
-    LOG.debug("Request body [{}]", body);
+    LOG.debug("Request body: {}", body);
     HttpResponse<String> response = null;
     try {
       response =
@@ -92,7 +92,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
                   .POST(HttpRequest.BodyPublishers.ofString(body))
                   .build(),
               HttpResponse.BodyHandlers.ofString());
-      LOG.debug("Opa response [{}]", response.body());
+      LOG.debug("Opa response: {}", response.body());
     } catch (Exception e) {
       LOG.error(e.getMessage());
       throw new OpaException.QueryFailed(e);
@@ -115,7 +115,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     }
     List<String> groups = result.result;
 
-    LOG.debug("Groups for [{}]: [{}]", user, groups);
+    LOG.debug("Groups for \"{}\": {}", user, groups);
 
     return groups;
   }
@@ -124,7 +124,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
   @Override
   public void cacheGroupsRefresh() {
     // does nothing in this provider of user to groups mapping
-    LOG.info("ignoring cacheGroupsRefresh: caching should be provided by the policy provider");
+    LOG.debug("ignoring cacheGroupsRefresh: caching should be provided by the policy provider");
   }
 
   /**
@@ -135,7 +135,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
   @Override
   public void cacheGroupsAdd(List<String> groups) {
     // does nothing in this provider of user to groups mapping
-    LOG.info(
+    LOG.debug(
         "ignoring cacheGroupsAdd for groups [{}]: caching should be provided by the policy provider",
         groups);
   }
