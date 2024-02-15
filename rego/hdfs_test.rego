@@ -8,7 +8,7 @@ test_admin_access_to_slash if {
             "shortUserName": "admin"
         },
         "path": "/top-level",
-        "operationName": "delete",
+        "operationName": "setErasureCodingPolicy",
     }
 }
 
@@ -18,7 +18,7 @@ test_admin_access_to_alice if {
             "shortUserName": "admin"
         },
         "path": "/alice/file",
-        "operationName": "delete",
+        "operationName": "create",
     }
 }
 
@@ -29,7 +29,7 @@ test_admin_access_to_alice_nested_file if {
             "shortUserName": "admin"
         },
         "path": "/alice/nested/file",
-        "operationName": "delete",
+        "operationName": "create",
     }
 }
 
@@ -39,7 +39,7 @@ test_admin_access_to_developers if {
             "shortUserName": "admin"
         },
         "path": "/developers/file",
-        "operationName": "getfileinfo",
+        "operationName": "create",
     }
 }
 
@@ -51,7 +51,7 @@ test_alice_access_to_alice_folder if {
             "shortUserName": "alice"
         },
         "path": "/alice",
-        "operationName": "getfileinfo",
+        "operationName": "create",
     }
 }
 
@@ -61,7 +61,7 @@ test_alice_access_to_alice if {
             "shortUserName": "alice"
         },
         "path": "/alice/file",
-        "operationName": "delete",
+        "operationName": "create",
     }
 }
 
@@ -71,7 +71,7 @@ test_alice_no_access_to_bob if {
             "shortUserName": "alice"
         },
         "path": "/bob/file",
-        "operationName": "delete",
+        "operationName": "open",
     }
 }
 
@@ -81,7 +81,7 @@ test_alice_access_to_developers if {
             "shortUserName": "alice"
         },
         "path": "/developers/file",
-        "operationName": "delete",
+        "operationName": "create",
     }
 }
 
@@ -95,7 +95,7 @@ test_bob_no_access_to_alice if {
             "shortUserName": "bob"
         },
         "path": "/alice/file",
-        "operationName": "delete",
+        "operationName": "open",
     }
 }
 
@@ -105,7 +105,7 @@ test_bob_access_to_bob if {
             "shortUserName": "bob"
         },
         "path": "/bob/file",
-        "operationName": "delete",
+        "operationName": "create",
     }
 }
 
@@ -115,7 +115,7 @@ test_bob_ro_access_to_developers if {
             "shortUserName": "bob"
         },
         "path": "/developers/file",
-        "operationName": "getfileinfo",
+        "operationName": "open",
     }
 }
 
@@ -125,7 +125,7 @@ test_bob_no_rw_access_to_developers if {
             "shortUserName": "bob"
         },
         "path": "/developers/file",
-        "operationName": "delete",
+        "operationName": "create",
     }
 }
 
@@ -135,6 +135,6 @@ test_bob_rw_access_to_developers_special_file if {
             "shortUserName": "bob"
         },
         "path": "/developers/file-from-bob",
-        "operationName": "listStatus", # FIXME: Change to operation that needs rw action
+        "operationName": "create",
     }
 }
