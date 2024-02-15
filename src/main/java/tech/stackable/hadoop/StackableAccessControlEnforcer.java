@@ -29,11 +29,11 @@ import java.util.Objects;
 // checkPermission and the new checkPermissionWithContext. HDFS uses reflection to check if the authorizer
 // supports the new API (which we do) and uses that in this case. This is also indicated by the log statement
 // "Use the new authorization provider API" during startup, see https://github.com/apache/hadoop/blob/50d256ef3c2531563bc6ba96dec6b78e154b4697/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/namenode/FSDirectory.java#L245
-// FSPermissionChecker has a ThreadLocal operationType, which needs to be set to e.g. "create", "delete" or
-// "rename" prior to calling the FSPermissionChecker.checkPermission function, as it will actually check if
-// operationType is null and will still use the old API in this case! But the old API does not have the
-// information about the operationType, which makes it hard to impossible to authorize the request. As a
-// consequence we only support the new API and will make sure no HDFS code path calls the old API. This required
+// FSPermissionChecker (as a caller of the AccessControlEnforcer interface) has a ThreadLocal operationType, which
+// needs to be set to e.g. "create", "delete" or "rename" prior to calling the FSPermissionChecker.checkPermission
+// function, as it will actually check if operationType is null and will still use the old API in this case! But the old
+// API does not have the information about the operationType, which makes it hard to impossible to authorize the request.
+// As a consequence we only support the new API and will make sure no HDFS code path calls the old API. This required
 // minor patches to HDFS, as it was e.g. missing a call to FSPermissionChecker.setOperationType("create") in
 // FSNamesystem.startFileInt (this claim needs to be validated though).
 public class StackableAccessControlEnforcer implements INodeAttributeProvider.AccessControlEnforcer {
