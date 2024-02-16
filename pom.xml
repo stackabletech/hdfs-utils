@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>tech.stackable</groupId>
-  <artifactId>hdfs-group-mapper</artifactId>
+  <artifactId>hdfs-utils</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 
-  <name>Apache Hadoop HDFS OpenPolicyAgent Group Mapper</name>
-  <url>https://github.com/stackabletech/hdfs-group-mapper/</url>
+  <name>Apache Hadoop HDFS utils</name>
+  <url>https://github.com/stackabletech/hdfs-utils/</url>
   <organization>
     <name>Stackable GmbH</name>
     <url>https://stackable.tech</url>
@@ -21,11 +21,11 @@
     <connection>scm:git:${project.scm.url}</connection>
     <developerConnection>scm:git:${project.scm.url}</developerConnection>
     <tag>HEAD</tag>
-    <url>git@github.com:stackabletech/hdfs-group-mapper.git</url>
+    <url>git@github.com:stackabletech/hdfs-utils.git</url>
   </scm>
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/stackabletech/hdfs-group-mapper/issues</url>
+    <url>https://github.com/stackabletech/hdfs-utils/issues</url>
   </issueManagement>
 
   <properties>
@@ -56,6 +56,12 @@
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
+      <version>${hadoop.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
       <version>${hadoop.version}</version>
       <scope>provided</scope>
     </dependency>

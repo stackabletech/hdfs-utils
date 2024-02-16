@@ -2,30 +2,30 @@ package tech.stackable.hadoop;
 
 import java.util.StringJoiner;
 
-public class OpaQuery {
-  public final OpaQueryInput input;
+public class OpaGroupsQuery {
+  public final OpaGroupsQueryInput input;
 
-  public OpaQuery(OpaQueryInput input) {
+  public OpaGroupsQuery(OpaGroupsQueryInput input) {
     this.input = input;
   }
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", OpaQuery.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", OpaGroupsQuery.class.getSimpleName() + "[", "]")
         .add("input=" + input)
         .toString();
   }
 
-  public static class OpaQueryInput {
+  public static class OpaGroupsQueryInput {
     public final String username;
 
-    public OpaQueryInput(String user) {
+    public OpaGroupsQueryInput(String user) {
       this.username = user;
     }
 
     @Override
     public String toString() {
-      return new StringJoiner(", ", OpaQueryInput.class.getSimpleName() + "[", "]")
+      return new StringJoiner(", ", OpaGroupsQueryInput.class.getSimpleName() + "[", "]")
           .add("username='" + username + "'")
           .toString();
     }

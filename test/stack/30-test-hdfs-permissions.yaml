@@ -1,0 +1,90 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-hdfs-permissions
+spec:
+  template:
+    spec:
+      containers:
+        - name: test-hdfs-permissions
+          image: docker.stackable.tech/stackable/hadoop:3.3.6-stackable0.0.0-dev
+          env:
+            - name: HADOOP_CONF_DIR
+              value: /stackable/conf/hdfs
+            - name: KRB5_CONFIG
+              value: /stackable/kerberos/krb5.conf
+            - name: HADOOP_OPTS
+              value: -Djava.security.krb5.conf=/stackable/kerberos/krb5.conf
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -ex
+              klist -k /stackable/kerberos/keytab
+
+              log_in () { kdestroy; kinit -kt /stackable/kerberos/keytab $1/test-hdfs-permissions.default.svc.cluster.local; }
+
+              log_in admin
+              bin/hdfs dfs -ls /
+              bin/hdfs dfs -mkdir -p /alice
+              bin/hdfs dfs -mkdir -p /bob
+              bin/hdfs dfs -mkdir -p /developers
+              bin/hdfs dfs -mkdir -p /developers-ro
+              bin/hdfs dfs -ls -R /
+
+              log_in alice
+              bin/hdfs dfs -ls / && exit 1
+              bin/hdfs dfs -ls /alice
+              bin/hdfs dfs -ls /bob && exit 1
+              bin/hdfs dfs -ls /developers
+              bin/hdfs dfs -ls /developers-ro
+
+              bin/hdfs dfs -put -f /etc/hosts /alice/
+              bin/hdfs dfs -put -f /etc/hosts /bob/ && exit 1
+              bin/hdfs dfs -put -f /etc/hosts /developers/
+              bin/hdfs dfs -put -f /etc/hosts /developers-ro/ && exit 1
+
+              log_in bob
+              bin/hdfs dfs -ls / && exit 1
+              bin/hdfs dfs -ls /alice && exit 1
+              bin/hdfs dfs -ls /bob
+              bin/hdfs dfs -ls /developers
+              bin/hdfs dfs -ls /developers-ro && exit 1
+
+              sleep infinity
+
+              bin/hdfs dfs -ls /
+              bin/hdfs dfs -rm -f /hosts
+              bin/hdfs dfs -put -f /etc/hosts /hosts
+              bin/hdfs dfs -ls /
+              bin/hdfs dfs -cat /hosts
+          volumeMounts:
+            - name: hdfs-config
+              mountPath: /stackable/conf/hdfs
+            - name: kerberos
+              mountPath: /stackable/kerberos
+      volumes:
+        - name: hdfs-config
+          configMap:
+            name: simple-hdfs
+        - name: kerberos
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                annotations:
+                  secrets.stackable.tech/class: kerberos-default
+                  secrets.stackable.tech/scope: service=test-hdfs-permissions
+                  secrets.stackable.tech/kerberos.service.names: admin,alice,bob
+              spec:
+                storageClassName: secrets.stackable.tech
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: "1"
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
+      restartPolicy: OnFailure

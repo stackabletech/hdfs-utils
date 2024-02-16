@@ -11,6 +11,15 @@ public abstract class OpaException extends RuntimeException {
     super(message, cause);
   }
 
+  public static final class UriMissing extends OpaException {
+    public UriMissing(String configuration) {
+      super("No Open Policy Agent URI provided (must be set in the configuration \""
+              + configuration
+              + "\")",
+          null);
+    }
+  }
+
   public static final class UriInvalid extends OpaException {
     public UriInvalid(URI uri, Throwable cause) {
       super(
@@ -32,6 +41,11 @@ public abstract class OpaException extends RuntimeException {
           null);
     }
   }
+  public static final class QueryFailed extends OpaException {
+    public QueryFailed(Throwable cause) {
+      super("Failed to query OPA backend", cause);
+    }
+  }
 
   public static final class OpaServerError extends OpaException {
     public <T> OpaServerError(String query, HttpResponse<T> response) {
@@ -43,6 +57,18 @@ public abstract class OpaException extends RuntimeException {
               + ": "
               + response.body(),
           null);
+    }
+  }
+
+  public static final class SerializeFailed extends OpaException {
+    public SerializeFailed(Throwable cause) {
+      super("Failed to serialize OPA query context", cause);
+    }
+  }
+
+  public static final class DeserializeFailed extends OpaException {
+    public DeserializeFailed(Throwable cause) {
+      super("Failed to deserialize OPA policy response", cause);
     }
   }
 }
