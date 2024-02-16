@@ -32,9 +32,9 @@ spec:
     dfsReplication: 1
     zookeeperConfigMapName: simple-hdfs-znode
     authentication:
-      tlsSecretClass: tls
+      tlsSecretClass: tls # pragma: allowlist secret
       kerberos:
-        secretClass: kerberos-default
+        secretClass: kerberos-default # pragma: allowlist secret
   nameNodes:
     envOverrides: &envOverrides
       HADOOP_CLASSPATH: "/stackable/hadoop/share/hadoop/tools/lib/*.jar"
