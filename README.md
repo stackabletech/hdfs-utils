@@ -9,7 +9,7 @@ This project contains multiple plugins for Apache Hadoop, which are intended to 
 3. Not (yet?) in this repository is a [TopologyProvider](https://github.com/stackabletech/hdfs-topology-provider/).
 
 ## Installation
-Run `mvn package` and put the resulting `target/hdfs-utils-0.1.0-SNAPSHOT.jar` file on your HDFS classpath.
+Run `mvn package` and put the resulting `target/hdfs-utils-*.jar` file on your HDFS classpath.
 The easiest way to achieve this is to put it in the directory `/stackable/hadoop/share/hadoop/tools/lib/`.
 The Stackable HDFS already takes care of this, you don't need to do anything in this case.
 
