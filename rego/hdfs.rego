@@ -53,7 +53,7 @@ action_sufficient_for_operation(action, operation) if {
 }
 
 action_hierarchy := {
-    "full": ["full", "rw","ro"],
+    "full": ["full", "rw", "ro"],
     "rw": ["rw", "ro"],
     "ro": ["ro"],
 }
@@ -115,7 +115,6 @@ action_for_operation := {
     "listSnapshottableDirectory": "ro",
     "listStatus": "ro",
     "listXAttrs": "ro",
-    "metaSave": "rw",
     "mkdirs": "rw",
     "modifyAclEntries": "full",
     "modifyCacheDirective": "rw",
@@ -160,6 +159,7 @@ admin_actions := {
     "enableRestoreFailedStorage": "full",
     "finalizeUpgrade": "rw",
     "getDatanodeStorageReport": "ro",
+    "metaSave": "ro",
     "monitorHealth": "ro",
     "refreshNodes": "rw",
     "rollEditLog": "rw",

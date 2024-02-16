@@ -62,7 +62,7 @@ data:
     }
 
     action_hierarchy := {
-        "full": ["full", "rw","ro"],
+        "full": ["full", "rw", "ro"],
         "rw": ["rw", "ro"],
         "ro": ["ro"],
     }
@@ -124,7 +124,6 @@ data:
         "listSnapshottableDirectory": "ro",
         "listStatus": "ro",
         "listXAttrs": "ro",
-        "metaSave": "rw",
         "mkdirs": "rw",
         "modifyAclEntries": "full",
         "modifyCacheDirective": "rw",
@@ -169,6 +168,7 @@ data:
         "enableRestoreFailedStorage": "full",
         "finalizeUpgrade": "rw",
         "getDatanodeStorageReport": "ro",
+        "metaSave": "ro",
         "monitorHealth": "ro",
         "refreshNodes": "rw",
         "rollEditLog": "rw",
