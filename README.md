@@ -610,14 +610,10 @@ OPA needs to respond with the list of groups as follows:
 
 ```json
 {
-  "result": {
-    "groups": {
-      "groups": [
-        "admin",
-        "developers"
-      ]
-    }
-  }
+  "result": [
+    "admin",
+    "developers"
+  ]
 }
 ```
 

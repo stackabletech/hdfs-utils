@@ -12,14 +12,7 @@ allow if {
     action_sufficient_for_operation(acl.action, input.operationName)
 }
 
-# HDFS group mapper
-# This will return the group data in this form:
-#    "result": {
-#        "groups": [
-#            "admin",
-#            "developers"
-#        ]
-#        ...
+# HDFS group mapper (this returns a list of strings)
 groups := {group |
     raw = groups_for_user[input.username][_]
     # Keycloak groups have trailing slashes
