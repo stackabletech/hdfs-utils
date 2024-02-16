@@ -121,6 +121,7 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
         try {
             prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
         } catch (JsonProcessingException e) {
+            LOG.error("Could not pretty print the following request body (but non-pretty print did work): {}", body);
             throw new OpaException.SerializeFailed(e);
         }
 
