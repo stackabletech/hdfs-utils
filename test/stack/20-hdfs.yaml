@@ -50,6 +50,17 @@ spec:
         # https://github.com/stackabletech/hdfs-operator/blob/main/rust/operator-binary/src/kerberos.rs#L97-L101
         # This should be removed so that the mapping implementation can provide this information instead:
         hadoop.user.group.static.mapping.overrides: ""
+    config:
+      logging:
+        containers:
+          hdfs:
+            console:
+              level: DEBUG
+            loggers:
+              ROOT:
+                level: INFO
+              tech.stackable.hadoop:
+                level: DEBUG
     roleGroups:
       default:
         replicas: 2

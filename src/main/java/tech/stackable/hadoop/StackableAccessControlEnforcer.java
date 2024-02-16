@@ -117,7 +117,14 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
             throw new OpaException.SerializeFailed(e);
         }
 
-        LOG.debug("Request body: {}", body);
+        String prettyPrinted;
+        try {
+            prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
+        } catch (JsonProcessingException e) {
+            throw new OpaException.SerializeFailed(e);
+        }
+
+        LOG.debug("Request body:\n{}", prettyPrinted);
         HttpResponse<String> response = null;
         try {
             response =
