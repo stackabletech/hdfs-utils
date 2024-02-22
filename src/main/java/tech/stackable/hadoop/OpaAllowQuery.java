@@ -1,6 +1,7 @@
 package tech.stackable.hadoop;
 
 import org.apache.hadoop.hdfs.server.namenode.INodeAttributeProvider;
+import org.apache.hadoop.security.UserGroupInformation;
 
 public class OpaAllowQuery {
   public final OpaAllowQueryInput input;
@@ -9,9 +10,14 @@ public class OpaAllowQuery {
     this.input = input;
   }
 
+  /**
+   * Wrapper around {@link INodeAttributeProvider.AuthorizationContext}, which uses our custom wrapper around
+   * {@link UserGroupInformation}, {@link OpaQueryUgi}.
+   */
   public static class OpaAllowQueryInput {
     public java.lang.String fsOwner;
     public java.lang.String supergroup;
+    // Wrapping this
     public OpaQueryUgi callerUgi;
     public org.apache.hadoop.hdfs.server.namenode.INodeAttributes[] inodeAttrs;
     public org.apache.hadoop.hdfs.server.namenode.INode[] inodes;
