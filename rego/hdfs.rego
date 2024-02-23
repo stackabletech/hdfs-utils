@@ -7,7 +7,7 @@ default allow = false
 # HDFS authorizer
 allow if {
     some acl in acls
-    matches_identity(input.callerUgi.shortUserName, acl.identity)
+    matches_identity(acl.identity)
     matches_resource(input.path, acl.resource)
     action_sufficient_for_operation(acl.action, input.operationName)
 }
@@ -19,14 +19,19 @@ groups := {group |
     group := trim_prefix(raw, "/")
 }
 
-# Identity mentions the user explicitly
-matches_identity(user, identity) if {
-    identity == concat("", ["user:", user])
+# Identity mentions the (long) userName explicitly
+matches_identity(identity) if {
+    identity == concat("", ["user:", input.callerUgi.userName])
 }
 
-# Identity mentions group the user is part of
-matches_identity(user, identity) if {
-    some group in groups_for_user[user]
+# Identity mentions the shortUserName explicitly
+matches_identity(identity) if {
+    identity == concat("", ["shortUser:", input.callerUgi.shortUserName])
+}
+
+# Identity mentions group the user is part of (by looking up using the (long) userName)
+matches_identity(identity) if {
+    some group in groups_for_user[input.callerUgi.userName]
     identity == concat("", ["group:", group])
 }
 
@@ -171,7 +176,11 @@ admin_actions := {
     "transitionToStandby": "full",
 }
 
-groups_for_user := {"admin": ["admins"], "alice": ["developers"], "bob": []}
+groups_for_user := {
+    "admin/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL": ["admins"],
+    "alice/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL": ["developers"],
+    "bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL": []
+}
 
 acls := [
     {
@@ -190,22 +199,27 @@ acls := [
         "resource": "hdfs:dir:/developers-ro/",
     },
     {
-        "identity": "user:alice",
+        "identity": "user:alice/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
         "action": "rw",
         "resource": "hdfs:dir:/alice/",
     },
     {
-        "identity": "user:bob",
+        "identity": "user:bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
         "action": "rw",
         "resource": "hdfs:dir:/bob/",
     },
     {
-        "identity": "user:bob",
+        "identity": "user:bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
         "action": "ro",
         "resource": "hdfs:dir:/developers/",
     },
     {
-        "identity": "user:bob",
+        "identity": "user:bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
+        "action": "rw",
+        "resource": "hdfs:file:/developers/file-from-bob",
+    },
+    {
+        "identity": "shortUser:bob",
         "action": "rw",
         "resource": "hdfs:file:/developers/file-from-bob",
     },
