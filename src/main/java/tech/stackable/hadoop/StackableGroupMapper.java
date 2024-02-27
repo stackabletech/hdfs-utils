@@ -4,23 +4,29 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.GroupMappingServiceProvider;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StackableGroupMapper implements GroupMappingServiceProvider {
 
-  public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.policy.url";
   private static final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
+
+  public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.policy.url";
+  // response base field: see https://www.openpolicyagent.org/docs/latest/rest-api/#response-message
+  private static final String OPA_RESULT_FIELD = "result";
+
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private final ObjectMapper json;
   private URI opaUri;
@@ -53,36 +59,21 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
   }
 
+  private static class OpaQueryResult {
+    public List<String> result;
+  }
+
   /**
-   * Returns list of groups for a user. Internally Hadoop will pass the short name to this function,
-   * but this prevents us from effectively separating users with the same names but with different
-   * kerberos principals. For this reason the user name is extracted from the UserGroupInformation
-   * instead (giving us the full name), defaulting to the original name if this is not possible.
+   * Returns list of groups for a user.
    *
-   * @param user get groups from the associated user group information for this user
+   * @param user get groups for this user
    * @return list of groups for a given user
    */
   @Override
   public List<String> getGroups(String user) {
     LOG.info("Calling StackableGroupMapper.getGroups for user \"{}\"", user);
 
-    String workingUser = user;
-    try {
-      UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
-      LOG.debug(
-          "Current user [{}] with user-name [{}] and short-name [{}]",
-          currentUser,
-          currentUser.getUserName(),
-          currentUser.getShortUserName());
-      workingUser = currentUser.getUserName();
-    } catch (IOException e) {
-      LOG.warn(
-          "Unable to extract name from UserGroupInformation, defaulting to \"{}\": {}",
-          user,
-          e.getMessage());
-    }
-
-    OpaGroupsQuery query = new OpaGroupsQuery(new OpaGroupsQuery.OpaGroupsQueryInput(workingUser));
+    OpaGroupsQuery query = new OpaGroupsQuery(new OpaGroupsQuery.OpaGroupsQueryInput(user));
 
     String body;
     try {
@@ -124,7 +115,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     }
     List<String> groups = result.result;
 
-    LOG.debug("Groups for \"{}\": {}", workingUser, groups);
+    LOG.debug("Groups for \"{}\": {}", user, groups);
 
     return groups;
   }
@@ -147,9 +138,5 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     LOG.debug(
         "ignoring cacheGroupsAdd for groups [{}]: caching should be provided by the policy provider",
         groups);
-  }
-
-  private static class OpaQueryResult {
-    public List<String> result;
   }
 }
