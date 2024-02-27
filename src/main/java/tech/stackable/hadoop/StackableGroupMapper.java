@@ -21,12 +21,8 @@ import org.slf4j.LoggerFactory;
 
 public class StackableGroupMapper implements GroupMappingServiceProvider {
 
-  private static final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
-
   public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.policy.url";
-  // response base field: see https://www.openpolicyagent.org/docs/latest/rest-api/#response-message
-  private static final String OPA_RESULT_FIELD = "result";
-
+  private static final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private final ObjectMapper json;
   private URI opaUri;
@@ -59,12 +55,10 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
   }
 
-  private static class OpaQueryResult {
-    public List<String> result;
-  }
-
   /**
-   * Returns list of groups for a user.
+   * Returns list of groups for a user. Internally Hadoop will pass the short name to this function,
+   * but this prevents us from effectively separating users with the same names but with different
+   * kerberos principals.
    *
    * @param user get groups for this user
    * @return list of groups for a given user
@@ -138,5 +132,9 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     LOG.debug(
         "ignoring cacheGroupsAdd for groups [{}]: caching should be provided by the policy provider",
         groups);
+  }
+
+  private static class OpaQueryResult {
+    public List<String> result;
   }
 }
