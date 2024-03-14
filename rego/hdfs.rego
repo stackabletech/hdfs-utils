@@ -15,12 +15,12 @@ allow if {
 
 # Identity mentions the (long) userName explicitly
 matches_identity(identity) if {
-    regex.match(identity, concat("", ["user:", input.callerUgi.userName]))
+    match_entire(identity, concat("", ["user:", input.callerUgi.userName]))
 }
 
 # Identity mentions the shortUsername explicitly
 matches_identity(identity) if {
-    regex.match(identity, concat("", ["shortUser:", input.callerUgi.shortUserName]))
+    match_entire(identity, concat("", ["shortUser:", input.callerUgi.shortUserName]))
 }
 
 # Identity mentions group the user is part of (by looking up using the (long) userName)
@@ -55,6 +55,13 @@ action_hierarchy := {
     "full": ["full", "rw", "ro"],
     "rw": ["rw", "ro"],
     "ro": ["ro"],
+}
+
+match_entire(pattern, value) if {
+	# Add the anchors ^ and $
+	pattern_with_anchors := concat("", ["^", pattern, "$"])
+
+	regex.match(pattern_with_anchors, value)
 }
 
 # To get a (hopefully complete) list of actions run "ack 'String operationName = '" in the hadoop source code
@@ -213,7 +220,7 @@ acls := [
         "resource": "hdfs:file:/developers/file-from-bob",
     },
     {
-        "identity": "shortUser:bob.*",
+        "identity": "shortUser:[b][o][b]",
         "action": "rw",
         "resource": "hdfs:file:/developers/file-from-bob",
     },
