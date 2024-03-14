@@ -13,14 +13,22 @@ allow if {
     action_sufficient_for_operation(acl.action, input.operationName)
 }
 
-# Identity mentions the (long) userName explicitly
+# Identity mentions the (long) userName or shortUsername explicitly
 matches_identity(identity) if {
-    match_entire(identity, concat("", ["user:", input.callerUgi.userName]))
+    identity in {
+        concat("", ["user:", input.callerUgi.userName]),
+        concat("", ["shortUser:", input.callerUgi.shortUserName])
+    }
 }
 
-# Identity mentions the shortUsername explicitly
+# Identity regex matches the (long) userName
 matches_identity(identity) if {
-    match_entire(identity, concat("", ["shortUser:", input.callerUgi.shortUserName]))
+    match_entire(identity, concat("", ["userRegex:", input.callerUgi.userName]))
+}
+
+# Identity regex matches the shortUsername
+matches_identity(identity) if {
+    match_entire(identity, concat("", ["shortUserRegex:", input.callerUgi.shortUserName]))
 }
 
 # Identity mentions group the user is part of (by looking up using the (long) userName)
@@ -205,7 +213,7 @@ acls := [
         "resource": "hdfs:dir:/alice/",
     },
     {
-        "identity": "user:bob/.+.default.svc.cluster.local@CLUSTER.LOCAL",
+        "identity": "userRegex:bob/.+.default.svc.cluster.local@CLUSTER.LOCAL",
         "action": "rw",
         "resource": "hdfs:dir:/bob/",
     },
@@ -220,7 +228,7 @@ acls := [
         "resource": "hdfs:file:/developers/file-from-bob",
     },
     {
-        "identity": "shortUser:(bob|bobby)",
+        "identity": "shortUserRegex:(bob|bobby)",
         "action": "rw",
         "resource": "hdfs:file:/developers/file-from-bob",
     },
