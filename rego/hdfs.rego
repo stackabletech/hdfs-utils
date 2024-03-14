@@ -213,7 +213,7 @@ acls := [
         "resource": "hdfs:dir:/alice/",
     },
     {
-        "identity": "userRegex:bob/.+\\.default\\.svc\\.cluster\\.local@CLUSTER\\.LOCAL",
+        "identity": `userRegex:bob/.+\.default\.svc\.cluster\.local@CLUSTER\.LOCAL`,
         "action": "rw",
         "resource": "hdfs:dir:/bob/",
     },
