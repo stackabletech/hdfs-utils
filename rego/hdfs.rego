@@ -37,6 +37,12 @@ matches_identity(identity) if {
     identity == concat("", ["group:", group])
 }
 
+# Identity regex matches group the user is part of (by looking up using the (long) userName)
+matches_identity(identity) if {
+    some group in groups_for_user[input.callerUgi.userName]
+    match_entire(identity, concat("", ["groupRegex:", group]))
+}
+
 # Resource mentions the file explicitly
 matches_resource(file, resource) if {
     resource == concat("", ["hdfs:file:", file])
@@ -198,7 +204,7 @@ acls := [
         "resource": "hdfs:dir:/",
     },
     {
-        "identity": "group:developers",
+        "identity": "groupRegex:(developers)",
         "action": "rw",
         "resource": "hdfs:dir:/developers/",
     },
