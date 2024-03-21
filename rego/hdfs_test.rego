@@ -152,7 +152,7 @@ test_bob_rw_access_to_developers_special_file if {
     }
 }
 
-test_bob_rw_access_to_developers_special_file if {
+test_bob_rw_access_to_developers_special_file_2 if {
     allow with input as {
         "callerUgi": {
             "shortUserName": "bob",
