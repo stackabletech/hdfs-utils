@@ -231,16 +231,16 @@ acls := [
     {
         "identity": "user:bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
         "action": "rw",
-        "resource": "hdfs:file:/developers/file-from-bob",
-    },
-    {
-        "identity": "shortUserRegex:(bob|bobby)",
-        "action": "rw",
-        "resource": "hdfs:file:/developers/file-from-bob",
+        "resource": "hdfs:file:/developers/file-from-bob-via-user",
     },
     {
         "identity": "shortUser:bob",
         "action": "rw",
-        "resource": "hdfs:file:/developers/file-from-bob-2",
+        "resource": "hdfs:file:/developers/file-from-bob-via-short-user",
+    },
+    {
+        "identity": "shortUserRegex:(bob|bobby)",
+        "action": "rw",
+        "resource": "hdfs:file:/developers/file-from-bob-via-short-user-regex",
     },
 ]
