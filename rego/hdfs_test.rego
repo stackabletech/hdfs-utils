@@ -144,10 +144,21 @@ test_bob_no_rw_access_to_developers if {
 test_bob_rw_access_to_developers_special_file if {
     allow with input as {
         "callerUgi": {
-            "shortUserName": "bob",
+            "shortUserName": "bobby",
             "userName": "bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
         },
         "path": "/developers/file-from-bob",
+        "operationName": "create",
+    }
+}
+
+test_bob_rw_access_to_developers_special_file if {
+    allow with input as {
+        "callerUgi": {
+            "shortUserName": "bob",
+            "userName": "bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
+        },
+        "path": "/developers/file-from-bob-2",
         "operationName": "create",
     }
 }

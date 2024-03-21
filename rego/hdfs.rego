@@ -238,4 +238,9 @@ acls := [
         "action": "rw",
         "resource": "hdfs:file:/developers/file-from-bob",
     },
+    {
+        "identity": "shortUser:bob",
+        "action": "rw",
+        "resource": "hdfs:file:/developers/file-from-bob-2",
+    },
 ]
