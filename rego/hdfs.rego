@@ -43,6 +43,18 @@ matches_identity(identity) if {
     match_entire(identity, concat("", ["groupRegex:", group]))
 }
 
+# Identity mentions group the user is part of (by looking up using the shortUserName)
+matches_identity(identity) if {
+    some group in groups_for_short_user_name[input.callerUgi.shortUserName]
+    identity == concat("", ["group:", group])
+}
+
+# Identity regex matches group the user is part of (by looking up using the shortUserName)
+matches_identity(identity) if {
+    some group in groups_for_short_user_name[input.callerUgi.shortUserName]
+    match_entire(identity, concat("", ["groupRegex:", group]))
+}
+
 # Resource mentions the file explicitly
 matches_resource(file, resource) if {
     resource == concat("", ["hdfs:file:", file])
@@ -196,6 +208,8 @@ groups_for_user := {
     "alice/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL": ["developers"],
     "bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL": []
 }
+
+groups_for_short_user_name := {}
 
 acls := [
     {
