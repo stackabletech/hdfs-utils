@@ -42,25 +42,25 @@ data:
 
     # Identity mentions group the user is part of (by looking up using the (long) userName)
     matches_identity(identity) if {
-        some group in groups_for_short_user_name[input.callerUgi.userName]
+        some group in groups_for_user[input.callerUgi.userName]
         identity == concat("", ["group:", group])
     }
 
     # Identity regex matches group the user is part of (by looking up using the (long) userName)
     matches_identity(identity) if {
-        some group in groups_for_short_user_name[input.callerUgi.userName]
+        some group in groups_for_user[input.callerUgi.userName]
         match_entire(identity, concat("", ["groupRegex:", group]))
     }
 
     # Identity mentions group the user is part of (by looking up using the shortUserName)
     matches_identity(identity) if {
-        some group in groups_for_user[input.callerUgi.shortUserName]
+        some group in groups_for_short_user_name[input.callerUgi.shortUserName]
         identity == concat("", ["group:", group])
     }
 
     # Identity regex matches group the user is part of (by looking up using the shortUserName)
     matches_identity(identity) if {
-        some group in groups_for_user[input.callerUgi.shortUserName]
+        some group in groups_for_short_user_name[input.callerUgi.shortUserName]
         match_entire(identity, concat("", ["groupRegex:", group]))
     }
 

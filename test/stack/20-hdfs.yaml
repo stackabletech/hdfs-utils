@@ -35,21 +35,11 @@ spec:
       tlsSecretClass: tls # pragma: allowlist secret
       kerberos:
         secretClass: kerberos-default # pragma: allowlist secret
+    authorization:
+      opa:
+        configMapName: opa
+        package: hdfs
   nameNodes:
-    envOverrides: &envOverrides
-      HADOOP_CLASSPATH: "/stackable/hadoop/share/hadoop/tools/lib/*.jar"
-    configOverrides: &configOverrides
-      hdfs-site.xml:
-        dfs.namenode.inode.attributes.provider.class: tech.stackable.hadoop.StackableAuthorizer
-      core-site.xml:
-        # The mapper is only handled on the namenode so no need to apply this config to all roles
-        hadoop.security.group.mapping: tech.stackable.hadoop.StackableGroupMapper
-        hadoop.security.group.mapping.opa.policy.url: http://opa.default.svc.cluster.local:8081/v1/data/hdfs/groups
-        hadoop.security.authorization.opa.policy.url: http://opa.default.svc.cluster.local:8081/v1/data/hdfs/allow
-        # The operator adds a default static mapping when kerberos is activated, see:
-        # https://github.com/stackabletech/hdfs-operator/blob/main/rust/operator-binary/src/kerberos.rs#L97-L101
-        # This should be removed so that the mapping implementation can provide this information instead:
-        hadoop.user.group.static.mapping.overrides: ""
     config:
       logging:
         containers:
@@ -65,14 +55,10 @@ spec:
       default:
         replicas: 2
   dataNodes:
-    configOverrides: *configOverrides
-    envOverrides: *envOverrides
     roleGroups:
       default:
         replicas: 1
   journalNodes:
-    configOverrides: *configOverrides
-    envOverrides: *envOverrides
     roleGroups:
       default:
         replicas: 1
