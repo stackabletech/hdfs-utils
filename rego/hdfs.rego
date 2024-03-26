@@ -2,7 +2,8 @@ package hdfs
 
 import rego.v1
 
-default allow = false
+default allow := false
+default matches_identity(identity) := false
 
 # HDFS authorizer
 allow if {
@@ -12,27 +13,46 @@ allow if {
     action_sufficient_for_operation(acl.action, input.operationName)
 }
 
-# HDFS group mapper (this returns a list of strings)
-groups := {group |
-    raw = groups_for_user[input.username][_]
-    # Keycloak groups have trailing slashes
-    group := trim_prefix(raw, "/")
+# Identity mentions the (long) userName or shortUsername explicitly
+matches_identity(identity) if {
+    identity in {
+        concat("", ["user:", input.callerUgi.userName]),
+        concat("", ["shortUser:", input.callerUgi.shortUserName])
+    }
 }
 
-# Identity mentions the (long) userName explicitly
+# Identity regex matches the (long) userName
 matches_identity(identity) if {
-    identity == concat("", ["user:", input.callerUgi.userName])
+    match_entire(identity, concat("", ["userRegex:", input.callerUgi.userName]))
 }
 
-# Identity mentions the shortUserName explicitly
+# Identity regex matches the shortUsername
 matches_identity(identity) if {
-    identity == concat("", ["shortUser:", input.callerUgi.shortUserName])
+    match_entire(identity, concat("", ["shortUserRegex:", input.callerUgi.shortUserName]))
 }
 
 # Identity mentions group the user is part of (by looking up using the (long) userName)
 matches_identity(identity) if {
     some group in groups_for_user[input.callerUgi.userName]
     identity == concat("", ["group:", group])
+}
+
+# Identity regex matches group the user is part of (by looking up using the (long) userName)
+matches_identity(identity) if {
+    some group in groups_for_user[input.callerUgi.userName]
+    match_entire(identity, concat("", ["groupRegex:", group]))
+}
+
+# Identity mentions group the user is part of (by looking up using the shortUserName)
+matches_identity(identity) if {
+    some group in groups_for_short_user_name[input.callerUgi.shortUserName]
+    identity == concat("", ["group:", group])
+}
+
+# Identity regex matches group the user is part of (by looking up using the shortUserName)
+matches_identity(identity) if {
+    some group in groups_for_short_user_name[input.callerUgi.shortUserName]
+    match_entire(identity, concat("", ["groupRegex:", group]))
 }
 
 # Resource mentions the file explicitly
@@ -61,6 +81,13 @@ action_hierarchy := {
     "full": ["full", "rw", "ro"],
     "rw": ["rw", "ro"],
     "ro": ["ro"],
+}
+
+match_entire(pattern, value) if {
+	# Add the anchors ^ and $
+	pattern_with_anchors := concat("", ["^", pattern, "$"])
+
+	regex.match(pattern_with_anchors, value)
 }
 
 # To get a (hopefully complete) list of actions run "ack 'String operationName = '" in the hadoop source code
@@ -182,6 +209,8 @@ groups_for_user := {
     "bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL": []
 }
 
+groups_for_short_user_name := {}
+
 acls := [
     {
         "identity": "group:admins",
@@ -189,7 +218,7 @@ acls := [
         "resource": "hdfs:dir:/",
     },
     {
-        "identity": "group:developers",
+        "identity": "groupRegex:(developers)",
         "action": "rw",
         "resource": "hdfs:dir:/developers/",
     },
@@ -204,7 +233,7 @@ acls := [
         "resource": "hdfs:dir:/alice/",
     },
     {
-        "identity": "user:bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
+        "identity": `userRegex:bob/.+\.default\.svc\.cluster\.local@CLUSTER\.LOCAL`,
         "action": "rw",
         "resource": "hdfs:dir:/bob/",
     },
@@ -216,11 +245,16 @@ acls := [
     {
         "identity": "user:bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
         "action": "rw",
-        "resource": "hdfs:file:/developers/file-from-bob",
+        "resource": "hdfs:file:/developers/file-from-bob-via-user",
     },
     {
         "identity": "shortUser:bob",
         "action": "rw",
-        "resource": "hdfs:file:/developers/file-from-bob",
+        "resource": "hdfs:file:/developers/file-from-bob-via-short-user",
+    },
+    {
+        "identity": "shortUserRegex:(bob|bobby)",
+        "action": "rw",
+        "resource": "hdfs:file:/developers/file-from-bob-via-short-user-regex",
     },
 ]

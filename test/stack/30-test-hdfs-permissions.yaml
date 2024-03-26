@@ -52,13 +52,8 @@ spec:
               bin/hdfs dfs -ls /developers
               bin/hdfs dfs -ls /developers-ro && exit 1
 
-              sleep infinity
-
-              bin/hdfs dfs -ls /
-              bin/hdfs dfs -rm -f /hosts
-              bin/hdfs dfs -put -f /etc/hosts /hosts
-              bin/hdfs dfs -ls /
-              bin/hdfs dfs -cat /hosts
+              echo "Test passed"
+              exit 0
           volumeMounts:
             - name: hdfs-config
               mountPath: /stackable/conf/hdfs

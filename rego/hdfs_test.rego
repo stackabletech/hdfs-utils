@@ -141,13 +141,35 @@ test_bob_no_rw_access_to_developers if {
     }
 }
 
-test_bob_rw_access_to_developers_special_file if {
+test_bob_rw_access_to_developers_special_file_via_user if {
     allow with input as {
         "callerUgi": {
             "shortUserName": "bob",
             "userName": "bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
         },
-        "path": "/developers/file-from-bob",
+        "path": "/developers/file-from-bob-via-user",
+        "operationName": "create",
+    }
+}
+
+test_bob_rw_access_to_developers_special_file_via_short_user if {
+    allow with input as {
+        "callerUgi": {
+            "shortUserName": "bob",
+            "userName": "bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
+        },
+        "path": "/developers/file-from-bob-via-short-user",
+        "operationName": "create",
+    }
+}
+
+test_bob_rw_access_to_developers_special_file_via_short_user_regex if {
+    allow with input as {
+        "callerUgi": {
+            "shortUserName": "bob",
+            "userName": "bob/test-hdfs-permissions.default.svc.cluster.local@CLUSTER.LOCAL",
+        },
+        "path": "/developers/file-from-bob-via-short-user-regex",
         "operationName": "create",
     }
 }
