@@ -1,0 +1,61 @@
+---
+apiVersion: zookeeper.stackable.tech/v1alpha1
+kind: ZookeeperCluster
+metadata:
+  name: simple-zk
+spec:
+  image:
+    productVersion: 3.8.3
+  servers:
+    roleGroups:
+      default:
+        replicas: 1
+---
+apiVersion: zookeeper.stackable.tech/v1alpha1
+kind: ZookeeperZnode
+metadata:
+  name: simple-hdfs-znode
+spec:
+  clusterRef:
+    name: simple-zk
+---
+apiVersion: hdfs.stackable.tech/v1alpha1
+kind: HdfsCluster
+metadata:
+  name: simple-hdfs
+spec:
+  image:
+    productVersion: 3.3.6
+    custom: hdfs # updated by tilt
+    pullPolicy: IfNotPresent
+  clusterConfig:
+    dfsReplication: 1
+    zookeeperConfigMapName: simple-hdfs-znode
+    rackAwareness:
+      - labelType: node
+        labelName: kubernetes.io/hostname
+      - labelType: pod
+        labelName: app.kubernetes.io/role-group
+    authentication:
+      tlsSecretClass: tls
+      kerberos:
+        secretClass: kerberos-default
+  nameNodes:
+    config:
+      listenerClass: external-stable # We want to access the Web UI
+    configOverrides: &configOverrides
+      core-site.xml:
+        hadoop.user.group.static.mapping.overrides: "dr.who=;nn=;nm=;jn=;testuser=supergroup;"
+    roleGroups:
+      default:
+        replicas: 2
+  dataNodes:
+    configOverrides: *configOverrides
+    roleGroups:
+      default:
+        replicas: 3
+  journalNodes:
+    configOverrides: *configOverrides
+    roleGroups:
+      default:
+        replicas: 1
