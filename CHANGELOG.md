@@ -6,6 +6,6 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Add topology-provider from https://github.com/stackabletech/hdfs-topology-provider ([#XXX]).
+- Add topology-provider from https://github.com/stackabletech/hdfs-topology-provider ([#28]).
 
-[#20]: https://github.com/stackabletech/hdfs-utils/pull/20
+[#28]: https://github.com/stackabletech/hdfs-utils/pull/28
