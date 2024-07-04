@@ -29,3 +29,5 @@ jobs:
         run: mvn -P hadoop-3.4.0 -B verify
       - name: Update dependency graph
         uses: advanced-security/maven-dependency-submission-action@5d0f9011b55d6268922128af45275986303459c3 # v4.0.3
+        with:
+          maven-args: -P hadoop-3.4.0
