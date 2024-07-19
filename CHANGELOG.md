@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Bump okio to 1.17.6 to get rid of CVE-2023-3635 ([#46])
 
-[#46]: https://github.com/stackabletech/hdfs-utils/pull/46 
+[#46]: https://github.com/stackabletech/hdfs-utils/pull/46
 
 ## [0.3.0] - 2024-07-04
 
