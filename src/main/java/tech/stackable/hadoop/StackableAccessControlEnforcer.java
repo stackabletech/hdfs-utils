@@ -124,6 +124,12 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
 
     @Override
     public void checkPermissionWithContext(INodeAttributeProvider.AuthorizationContext authzContext) throws AccessControlException {
+        // When executing "hdfs dfs -du /" the path is set to null. This does not worsen security, as "/" is the
+        // highest level of access that a user can have.
+        if (authzContext.getOperationName().equals("contentSummary") && authzContext.getPath() == null) {
+            authzContext.setPath("/");
+        }
+
         final Object query;
         if (this.extendedRequests) {
             query = new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(authzContext));
