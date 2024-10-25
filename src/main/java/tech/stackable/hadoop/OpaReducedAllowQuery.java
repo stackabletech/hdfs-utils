@@ -11,8 +11,8 @@ public class OpaReducedAllowQuery {
   }
 
   /**
-   * Similar to {@link OpaAllowQuery.OpaAllowQueryInput}, but  this class only contains a subset of   * fields that
-   * should be sufficient for most use-cases, but offer a much better performance.
+   * Similar to {@link OpaAllowQuery.OpaAllowQueryInput}, but this class only contains a subset of
+   * fields that should be sufficient for most use-cases, but offer a much better performance.
    * See <a href="https://github.com/stackabletech/hdfs-utils/issues/48">this issue</a> for details.
    */
   public static class OpaReducedAllowQueryInput {
