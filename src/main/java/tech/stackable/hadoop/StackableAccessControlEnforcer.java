@@ -87,7 +87,14 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
                 // Otherwise we get com.fasterxml.jackson.databind.JsonMappingException: Infinite recursion (StackOverflowError)
                 .addMixIn(DatanodeDescriptor.class, DatanodeDescriptorMixin.class);
 
-        LOG.debug("Started HdfsOpaAccessControlEnforcer");
+        StringBuilder logStartupStatement = new StringBuilder("Started HdfsOpaAccessControlEnforcer");
+        if (this.extendedRequests) {
+            logStartupStatement.append(" sending extended requests");
+        } else {
+            logStartupStatement.append(" sending reduced requests");
+        }
+        logStartupStatement.append(" to OPA url ").append(this.opaUri);
+        LOG.debug(logStartupStatement.toString());
     }
 
     private static class OpaQueryResult {
