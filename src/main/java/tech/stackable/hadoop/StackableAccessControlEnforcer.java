@@ -41,10 +41,12 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
     private static final Logger LOG = LoggerFactory.getLogger(StackableAccessControlEnforcer.class);
 
     public static final String OPA_POLICY_URL_PROP = "hadoop.security.authorization.opa.policy.url";
+    public static final String EXTENDED_REQUESTS_PROP = "hadoop.security.authorization.opa.extended-requests";
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper json;
-    private URI opaUri;
+    private final URI opaUri;
+    private final boolean extendedRequests;
 
     public StackableAccessControlEnforcer() {
         LOG.debug("Starting StackableAccessControlEnforcer");
@@ -60,7 +62,14 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
         try {
             this.opaUri = URI.create(opaPolicyUrl);
         } catch (Exception e) {
-            throw new OpaException.UriInvalid(opaUri, e);
+            throw new OpaException.UriInvalid(opaPolicyUrl, e);
+        }
+
+        String extendedRequests = configuration.get(EXTENDED_REQUESTS_PROP, "false");
+        try {
+            this.extendedRequests = Boolean.parseBoolean(extendedRequests);
+        } catch (Exception e) {
+            throw new OpaException.ExtendedRequestsConfigNotABoolean(extendedRequests, e);
         }
 
         this.json = new ObjectMapper()
@@ -108,21 +117,37 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
 
     @Override
     public void checkPermissionWithContext(INodeAttributeProvider.AuthorizationContext authzContext) throws AccessControlException {
-        OpaAllowQuery query = new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(authzContext));
-
         String body;
-        try {
-            body = json.writeValueAsString(query);
-        } catch (JsonProcessingException e) {
-            throw new OpaException.SerializeFailed(e);
-        }
-
         String prettyPrinted;
-        try {
-            prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
-        } catch (JsonProcessingException e) {
-            LOG.error("Could not pretty print the following request body (but non-pretty print did work): {}", body);
-            throw new OpaException.SerializeFailed(e);
+        if (this.extendedRequests) {
+            OpaAllowQuery query = new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(authzContext));
+
+            try {
+                body = json.writeValueAsString(query);
+            } catch (JsonProcessingException e) {
+                throw new OpaException.SerializeFailed(e);
+            }
+            try {
+                prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
+            } catch (JsonProcessingException e) {
+                LOG.error("Could not pretty print the following request body (but non-pretty print did work): {}", body);
+                throw new OpaException.SerializeFailed(e);
+            }
+        } else {
+            OpaReducedAllowQuery query = new OpaReducedAllowQuery(new OpaReducedAllowQuery.OpaReducedAllowQueryInput(authzContext));
+
+            try {
+                body = json.writeValueAsString(query);
+            } catch (JsonProcessingException e) {
+                throw new OpaException.SerializeFailed(e);
+            }
+
+            try {
+                prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
+            } catch (JsonProcessingException e) {
+                LOG.error("Could not pretty print the following request body (but non-pretty print did work): {}", body);
+                throw new OpaException.SerializeFailed(e);
+            }
         }
 
         LOG.debug("Request body:\n{}", prettyPrinted);
@@ -147,7 +172,7 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
             case 404:
                 throw new OpaException.EndPointNotFound(opaUri.toString());
             default:
-                throw new OpaException.OpaServerError(query.toString(), response);
+                throw new OpaException.OpaServerError(body, response);
         }
 
         OpaQueryResult result;

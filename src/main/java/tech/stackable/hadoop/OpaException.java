@@ -1,5 +1,6 @@
 package tech.stackable.hadoop;
 
+import static tech.stackable.hadoop.StackableAccessControlEnforcer.EXTENDED_REQUESTS_PROP;
 import static tech.stackable.hadoop.StackableGroupMapper.OPA_MAPPING_URL_PROP;
 
 import java.net.URI;
@@ -13,21 +14,33 @@ public abstract class OpaException extends RuntimeException {
 
   public static final class UriMissing extends OpaException {
     public UriMissing(String configuration) {
-      super("No Open Policy Agent URI provided (must be set in the configuration \""
-              + configuration
-              + "\")",
+      super(
+              "No Open Policy Agent URI provided (must be set in the configuration \""
+                + configuration
+                + "\")",
           null);
     }
   }
 
   public static final class UriInvalid extends OpaException {
-    public UriInvalid(URI uri, Throwable cause) {
+    public UriInvalid(String uri, Throwable cause) {
       super(
-          "Open Policy Agent URI is invalid (see configuration property \""
-              + OPA_MAPPING_URL_PROP
-              + "\"): "
-              + uri,
-          cause);
+              "Open Policy Agent URI is invalid (see configuration property \""
+                      + OPA_MAPPING_URL_PROP
+                      + "\"): "
+                      + uri,
+              cause);
+    }
+  }
+
+  public static final class ExtendedRequestsConfigNotABoolean extends OpaException {
+    public ExtendedRequestsConfigNotABoolean(String extendedRequests, Throwable cause) {
+      super(
+              "The extended-requests property is not a boolean (see configuration property \""
+                      + EXTENDED_REQUESTS_PROP
+                      + "\"): "
+                      + extendedRequests,
+              cause);
     }
   }
 
@@ -41,6 +54,7 @@ public abstract class OpaException extends RuntimeException {
           null);
     }
   }
+
   public static final class QueryFailed extends OpaException {
     public QueryFailed(Throwable cause) {
       super("Failed to query OPA backend", cause);

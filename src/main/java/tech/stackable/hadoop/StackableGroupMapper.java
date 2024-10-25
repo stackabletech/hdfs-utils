@@ -25,7 +25,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
   private static final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private final ObjectMapper json;
-  private URI opaUri;
+  private final URI opaUri;
 
   public StackableGroupMapper() {
     // Guaranteed to be only called once (Effective Java: Item 3)
@@ -39,7 +39,7 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     try {
       this.opaUri = URI.create(opaMappingUrl);
     } catch (Exception e) {
-      throw new OpaException.UriInvalid(opaUri, e);
+      throw new OpaException.UriInvalid(opaMappingUrl, e);
     }
 
     LOG.debug("OPA mapping URL: {}", opaMappingUrl);
