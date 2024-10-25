@@ -117,37 +117,26 @@ public class StackableAccessControlEnforcer implements INodeAttributeProvider.Ac
 
     @Override
     public void checkPermissionWithContext(INodeAttributeProvider.AuthorizationContext authzContext) throws AccessControlException {
-        String body;
-        String prettyPrinted;
+        final Object query;
         if (this.extendedRequests) {
-            OpaAllowQuery query = new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(authzContext));
-
-            try {
-                body = json.writeValueAsString(query);
-            } catch (JsonProcessingException e) {
-                throw new OpaException.SerializeFailed(e);
-            }
-            try {
-                prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
-            } catch (JsonProcessingException e) {
-                LOG.error("Could not pretty print the following request body (but non-pretty print did work): {}", body);
-                throw new OpaException.SerializeFailed(e);
-            }
+            query = new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(authzContext));
         } else {
-            OpaReducedAllowQuery query = new OpaReducedAllowQuery(new OpaReducedAllowQuery.OpaReducedAllowQueryInput(authzContext));
+            query = new OpaReducedAllowQuery(new OpaReducedAllowQuery.OpaReducedAllowQueryInput(authzContext));
+        }
 
-            try {
-                body = json.writeValueAsString(query);
-            } catch (JsonProcessingException e) {
-                throw new OpaException.SerializeFailed(e);
-            }
+        String body;
+        try {
+            body = json.writeValueAsString(query);
+        } catch (JsonProcessingException e) {
+            throw new OpaException.SerializeFailed(e);
+        }
 
-            try {
-                prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
-            } catch (JsonProcessingException e) {
-                LOG.error("Could not pretty print the following request body (but non-pretty print did work): {}", body);
-                throw new OpaException.SerializeFailed(e);
-            }
+        String prettyPrinted;
+        try {
+            prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
+        } catch (JsonProcessingException e) {
+            LOG.error("Could not pretty print the following request body (but non-pretty print did work): {}", body);
+            throw new OpaException.SerializeFailed(e);
         }
 
         LOG.debug("Request body:\n{}", prettyPrinted);
