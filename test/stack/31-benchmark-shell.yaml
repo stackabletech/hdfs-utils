@@ -1,0 +1,71 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: benchmark-shell
+spec:
+  template:
+    spec:
+      containers:
+        - name: benchmark-shell
+          image: docker.stackable.tech/stackable/hadoop:3.4.0-stackable0.0.0-dev
+          env:
+            - name: HADOOP_CONF_DIR
+              value: /stackable/conf/hdfs
+            - name: KRB5_CONFIG
+              value: /stackable/kerberos/krb5.conf
+            - name: HADOOP_OPTS
+              value: -Djava.security.krb5.conf=/stackable/kerberos/krb5.conf
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -ex
+              klist -k /stackable/kerberos/keytab
+
+              log_in () { kdestroy; kinit -kt /stackable/kerberos/keytab $1/benchmark-shell.default.svc.cluster.local; }
+
+              log_in admin
+
+              bin/hdfs dfs -mkdir -p /bench
+              bin/hdfs dfs -ls /bench
+
+              # for i in $(seq 0 10); do echo "Creating $i" && bin/hdfs dfs -put -f /etc/hosts /bench/$i; done
+
+              # Watch out for the exact command you are using! (e.g. don't use "du -h /""). Checl the NameNode logs to
+              # make sure you actually produce enough OPA calls.
+              # time bin/hdfs dfs -du -h /bench
+             
+              # So that you can run the benchmark manually
+              sleep infinity
+
+              exit 0
+          volumeMounts:
+            - name: hdfs-config
+              mountPath: /stackable/conf/hdfs
+            - name: kerberos
+              mountPath: /stackable/kerberos
+      volumes:
+        - name: hdfs-config
+          configMap:
+            name: simple-hdfs
+        - name: kerberos
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                annotations:
+                  secrets.stackable.tech/class: kerberos-default
+                  secrets.stackable.tech/scope: service=benchmark-shell
+                  secrets.stackable.tech/kerberos.service.names: admin,alice,bob
+              spec:
+                storageClassName: secrets.stackable.tech
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: "1"
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
+      restartPolicy: OnFailure
