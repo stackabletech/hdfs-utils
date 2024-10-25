@@ -8,13 +8,14 @@ All notable changes to this project will be documented in this file.
 
 - BREAKING: Only send a subset of the fields sufficient for most use-cases to OPA for performance reasons.
   The old behavior of sending all fields can be restored by setting `hadoop.security.authorization.opa.extended-requests` to `true` ([#XX]).
-- Bump `okio` to 1.17.6 and to 3.9.1 afterwards to get rid of CVE-2023-3635 ([#46], [#XX]).
+- Bump `okio` to 1.17.6 and to 3.9.1 afterwards to get rid of CVE-2023-3635 ([#46], [#49]).
 
 ### Fixed
 
-- Set path to `/` when the operation `contentSummary` is called on `/`. Previously path was set to `null` ([#XX]).
+- Set path to `/` when the operation `contentSummary` is called on `/`. Previously path was set to `null` ([#49]).
 
 [#46]: https://github.com/stackabletech/hdfs-utils/pull/46
+[#49]: https://github.com/stackabletech/hdfs-utils/pull/49
 
 ## [0.3.0] - 2024-07-04
 
