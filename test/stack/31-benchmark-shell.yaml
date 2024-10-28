@@ -35,7 +35,7 @@ spec:
               # Watch out for the exact command you are using! (e.g. don't use "du -h /""). Checl the NameNode logs to
               # make sure you actually produce enough OPA calls.
               # time bin/hdfs dfs -du -h /bench
-             
+
               # So that you can run the benchmark manually
               sleep infinity
 
