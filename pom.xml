@@ -36,19 +36,21 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <cleanthat.version>2.17</cleanthat.version>
-    <error-prone.version>2.27.1</error-prone.version>
+    <error-prone.version>2.28.0</error-prone.version>
     <google-java-format.version>1.19.2</google-java-format.version>
 
-    <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
+    <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
-    <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
+    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
     <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
-    <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
+    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
-    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
     <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
+    <kubernetes-client.version>6.13.1</kubernetes-client.version>
+    <okio.version>1.17.6</okio.version>
   </properties>
 
   <dependencies>
@@ -85,12 +87,23 @@
     <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>kubernetes-client</artifactId>
-      <version>6.13.1</version>
+      <version>${kubernetes-client.version}</version>
     </dependency>
     <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>kubernetes-client-api</artifactId>
-      <version>6.13.1</version>
+      <version>${kubernetes-client.version}</version>
+    </dependency>
+    <dependency>
+      <!--
+      We bump this here to get rid of a critical CVE in okio 1.15 which we get via kubernetes-client.
+      We tried understanding _why_ we get 1.15 as dependency:tree for kubernetes-client says we should be getting 1.17.6.
+      As we failed to understand this we did this short/medium term fix of adding an explicit dependency here which should override the one coming from kubernetes-client.
+      This can be removed again as soon as we get the proper version from kubernetes-client.
+      -->
+      <groupId>com.squareup.okio</groupId>
+      <artifactId>okio</artifactId>
+      <version>${okio.version}</version>
     </dependency>
     <!-- End of needed by topology-provider -->
     <dependency>
@@ -176,7 +189,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.5.3</version>
+        <version>3.6.0</version>
         <executions>
           <execution>
             <goals>
@@ -239,6 +252,23 @@
               <goal>apply</goal>
             </goals>
             <phase>verify</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.cyclonedx</groupId>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
+        <version>2.8.0</version>
+        <configuration>
+          <projectType>application</projectType>
+          <schemaVersion>1.5</schemaVersion>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>makeBom</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>

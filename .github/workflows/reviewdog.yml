@@ -13,50 +13,50 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
-      - uses: reviewdog/action-actionlint@89a03f6ba8c0a9fd238e82c075ffb34b86e40291 # v1.46.0
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: reviewdog/action-actionlint@d99f1ceaf59e7db022a790dc308ccccb68dda71a # v1.53.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   detect-secrets:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
-      - uses: reviewdog/action-detect-secrets@8827bf02944e7d1684d490c2361be0bf6c2d6e7d # v0.21.0
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: reviewdog/action-detect-secrets@84a331098c48fc892be9af5656f798d0f5f79d81 # v0.25.0
         with:
           github_token: ${{ secrets.github_token }}
 
   flake8:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
-      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
           python-version: "3.9"
-      - uses: reviewdog/action-flake8@51c2708ac3e9463b4d27d0ba7d9e3ded608a6ad3 # tag=v3.8.0
+      - uses: reviewdog/action-flake8@a16657733fa37bf58a277754fa9c055f0c3aae49 # v3.12.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   markdownlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
-      - uses: reviewdog/action-markdownlint@5bc6ad5ba9e1250878f351bafcc7ac0a11dc050f # v0.18.0
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: reviewdog/action-markdownlint@af20b94e5c376c5b964555d9c21c2d9df8b89975 # v0.23.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
-      - uses: reviewdog/action-shellcheck@72365a51bf6476fe952a117c3ff703eb7775e40a # v1.20.0
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: reviewdog/action-shellcheck@628ce8561be20bfbfb6173cf88c7475ddab95f22 # v1.24.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   yamllint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
-      - uses: reviewdog/action-yamllint@8d79c3d034667db2792e328936811ed44953d691 # v1.14.0
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: reviewdog/action-yamllint@c23c5d4cd45b5cc16fa3e6e34073068b228cabeb # v1.17.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
