@@ -7,26 +7,30 @@ import org.slf4j.LoggerFactory;
 
 public class StackableAuthorizer extends INodeAttributeProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StackableAuthorizer.class);
+  private static final Logger LOG = LoggerFactory.getLogger(StackableAuthorizer.class);
 
-    @Override
-    public void start() {
-        LOG.debug("Starting HdfsOpaAuthorizer");
-    }
+  private static final StackableAccessControlEnforcer ENFORCER =
+      new StackableAccessControlEnforcer();
 
-    @Override
-    public void stop() {
-        LOG.debug("Stopping HdfsOpaAuthorizer");
-    }
+  @Override
+  public void start() {
+    LOG.debug("Starting HdfsOpaAuthorizer");
+  }
 
-    @Override
-    public INodeAttributes getAttributes(String[] strings, INodeAttributes iNodeAttributes) {
-        // No special attributes needed
-        return iNodeAttributes;
-    }
+  @Override
+  public void stop() {
+    LOG.debug("Stopping HdfsOpaAuthorizer");
+  }
 
-    @Override
-    public AccessControlEnforcer getExternalAccessControlEnforcer(AccessControlEnforcer defaultEnforcer) {
-        return new StackableAccessControlEnforcer();
-    }
+  @Override
+  public INodeAttributes getAttributes(String[] strings, INodeAttributes iNodeAttributes) {
+    // No special attributes needed
+    return iNodeAttributes;
+  }
+
+  @Override
+  public AccessControlEnforcer getExternalAccessControlEnforcer(
+      AccessControlEnforcer defaultEnforcer) {
+    return ENFORCER;
+  }
 }
