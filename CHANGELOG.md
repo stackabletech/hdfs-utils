@@ -6,8 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Bump okio to 1.17.6 to get rid of CVE-2023-3635 ([#46])
+- Performance fixes ([#50])
 - Updates various dependencies and does a full spotless run. This will now require JDK 17 or later to build (required by later error-prone versions), the build target is still Java 11 [#51]
 
+[#46]: https://github.com/stackabletech/hdfs-utils/pull/46
+[#50]: https://github.com/stackabletech/hdfs-utils/pull/50
 [#51]: https://github.com/stackabletech/hdfs-utils/pull/51
 
 ## [0.3.0] - 2024-07-04
