@@ -8,12 +8,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.HashMap;
+import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.GroupMappingServiceProvider;
 import org.slf4j.Logger;
@@ -23,7 +20,8 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
 
   public static final String OPA_MAPPING_URL_PROP = "hadoop.security.group.mapping.opa.policy.url";
   private static final Logger LOG = LoggerFactory.getLogger(StackableGroupMapper.class);
-  private final HttpClient httpClient = HttpClient.newHttpClient();
+  private static final HttpClient HTTP_CLIENT =
+      HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
   private final ObjectMapper json;
   private final URI opaUri;
 
@@ -80,13 +78,13 @@ public class StackableGroupMapper implements GroupMappingServiceProvider {
     HttpResponse<String> response = null;
     try {
       response =
-          httpClient.send(
+          HTTP_CLIENT.send(
               HttpRequest.newBuilder(opaUri)
                   .header("Content-Type", "application/json")
                   .POST(HttpRequest.BodyPublishers.ofString(body))
                   .build(),
               HttpResponse.BodyHandlers.ofString());
-      LOG.debug("Opa response: {}", response.body());
+      LOG.debug("OPA response: {}", response.body());
     } catch (Exception e) {
       LOG.error(e.getMessage());
       throw new OpaException.QueryFailed(e);
