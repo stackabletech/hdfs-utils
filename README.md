@@ -33,7 +33,6 @@ The Stackable HDFS already takes care of this, you don't need to do anything in 
 
 By default for every HDFS action a request similar to the following is sent to OPA:
 
-
 ```json
 {
   "input": {
