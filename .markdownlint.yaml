@@ -18,3 +18,8 @@ MD013:
 MD024:
   # Only check sibling headings
   siblings_only: true
+
+# MD033/no-inline-html Inline HTML [Element: summary]
+MD033:
+  # Allow expandable boxes
+  allowed_elements: [details, summary]
