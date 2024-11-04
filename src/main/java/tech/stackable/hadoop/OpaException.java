@@ -13,7 +13,8 @@ public abstract class OpaException extends RuntimeException {
 
   public static final class UriMissing extends OpaException {
     public UriMissing(String configuration) {
-      super("No Open Policy Agent URI provided (must be set in the configuration \""
+      super(
+          "No Open Policy Agent URI provided (must be set in the configuration \""
               + configuration
               + "\")",
           null);
@@ -41,6 +42,7 @@ public abstract class OpaException extends RuntimeException {
           null);
     }
   }
+
   public static final class QueryFailed extends OpaException {
     public QueryFailed(Throwable cause) {
       super("Failed to query OPA backend", cause);
