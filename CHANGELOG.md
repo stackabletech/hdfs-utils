@@ -23,4 +23,3 @@ All notable changes to this project will be documented in this file.
 
 [#28]: https://github.com/stackabletech/hdfs-utils/pull/28
 [#29]: https://github.com/stackabletech/hdfs-utils/pull/29
-

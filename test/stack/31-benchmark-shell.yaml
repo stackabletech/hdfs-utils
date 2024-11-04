@@ -2,12 +2,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: test-hdfs-permissions
+  name: benchmark-shell
 spec:
   template:
     spec:
       containers:
-        - name: test-hdfs-permissions
+        - name: benchmark-shell
           image: docker.stackable.tech/stackable/hadoop:3.4.0-stackable0.0.0-dev
           env:
             - name: HADOOP_CONF_DIR
@@ -23,36 +23,22 @@ spec:
               set -ex
               klist -k /stackable/kerberos/keytab
 
-              log_in () { kdestroy; kinit -kt /stackable/kerberos/keytab $1/test-hdfs-permissions.default.svc.cluster.local; }
+              log_in () { kdestroy; kinit -kt /stackable/kerberos/keytab $1/benchmark-shell.default.svc.cluster.local; }
 
               log_in admin
-              bin/hdfs dfs -ls /
-              bin/hdfs dfs -mkdir -p /alice
-              bin/hdfs dfs -mkdir -p /bob
-              bin/hdfs dfs -mkdir -p /developers
-              bin/hdfs dfs -mkdir -p /developers-ro
-              bin/hdfs dfs -ls -R /
 
-              log_in alice
-              bin/hdfs dfs -ls / && exit 1
-              bin/hdfs dfs -ls /alice
-              bin/hdfs dfs -ls /bob && exit 1
-              bin/hdfs dfs -ls /developers
-              bin/hdfs dfs -ls /developers-ro
+              bin/hdfs dfs -mkdir -p /bench
+              bin/hdfs dfs -ls /bench
 
-              bin/hdfs dfs -put -f /etc/hosts /alice/
-              bin/hdfs dfs -put -f /etc/hosts /bob/ && exit 1
-              bin/hdfs dfs -put -f /etc/hosts /developers/
-              bin/hdfs dfs -put -f /etc/hosts /developers-ro/ && exit 1
+              # for i in $(seq 0 10); do echo "Creating $i" && bin/hdfs dfs -put -f /etc/hosts /bench/$i; done
 
-              log_in bob
-              bin/hdfs dfs -ls / && exit 1
-              bin/hdfs dfs -ls /alice && exit 1
-              bin/hdfs dfs -ls /bob
-              bin/hdfs dfs -ls /developers
-              bin/hdfs dfs -ls /developers-ro && exit 1
+              # Watch out for the exact command you are using! (e.g. don't use "du -h /""). Checl the NameNode logs to
+              # make sure you actually produce enough OPA calls.
+              # time bin/hdfs dfs -du -h /bench
 
-              echo "Test passed"
+              # So that you can run the benchmark manually
+              sleep infinity
+
               exit 0
           volumeMounts:
             - name: hdfs-config
@@ -69,7 +55,7 @@ spec:
               metadata:
                 annotations:
                   secrets.stackable.tech/class: kerberos-default
-                  secrets.stackable.tech/scope: service=test-hdfs-permissions
+                  secrets.stackable.tech/scope: service=benchmark-shell
                   secrets.stackable.tech/kerberos.service.names: admin,alice,bob
               spec:
                 storageClassName: secrets.stackable.tech

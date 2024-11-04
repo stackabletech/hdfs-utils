@@ -35,6 +35,10 @@
     <maven.compiler.release>${java.version}</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+    <!-- Tip:
+     Use "mvn versions:display-dependency-updates" and
+     "mvn versions:display-plugin-updates"
+     to check for updates -->
     <cleanthat.version>2.22</cleanthat.version>
     <error-prone.version>2.35.1</error-prone.version>
     <google-java-format.version>1.24.0</google-java-format.version>
