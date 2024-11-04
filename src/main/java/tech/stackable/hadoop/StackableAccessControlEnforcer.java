@@ -58,7 +58,7 @@ public class StackableAccessControlEnforcer
   private static final HttpClient HTTP_CLIENT =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
   private final ObjectMapper json;
-  private URI opaUri;
+  private final URI opaUri;
   private final boolean extendedRequests;
 
   public StackableAccessControlEnforcer() {
