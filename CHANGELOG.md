@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2024-11-05
+
 ### Changed
 
 - BREAKING: Only send a subset of the fields sufficient for most use-cases to OPA for performance reasons.
