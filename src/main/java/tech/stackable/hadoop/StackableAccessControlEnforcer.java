@@ -177,7 +177,7 @@ public class StackableAccessControlEnforcer
       authzContext.setPath("/");
     }
 
-    final Object query;
+    Object query;
     if (this.extendedRequests) {
       query = new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(authzContext));
     } else {
