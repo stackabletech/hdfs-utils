@@ -26,7 +26,7 @@ The Stackable HDFS already takes care of this, you don't need to do anything in 
 
 - Set `dfs.namenode.inode.attributes.provider.class` in `hdfs-site.xml` to `tech.stackable.hadoop.StackableAuthorizer`
 - Set `hadoop.security.authorization.opa.policy.url` in `core-site.xml` to the HTTP endpoint of your OPA rego rule, e.g. `http://opa.default.svc.cluster.local:8081/v1/data/hdfs/allow`
-- The property `hadoop.security.authorization.opa.extended-requests` (defaults to `false`), which controls if all fields should be sent to OPA.
+- The property `hadoop.security.authorization.opa.extended-requests` (defaults to `false`) controls if all fields (`true`) should be sent to OPA or only a subset
   Sending all fields degrades the performance, but allows for more advanced authorization.
 
 ### API
