@@ -27,14 +27,13 @@ spec:
 
               log_in admin
 
-              bin/hdfs dfs -mkdir -p /bench
-              bin/hdfs dfs -ls /bench
+              bin/hdfs dfs -mkdir -p /bench/deep/path/with/many/sub/sub/dirs/
 
-              # for i in $(seq 0 10); do echo "Creating $i" && bin/hdfs dfs -put -f /etc/hosts /bench/$i; done
+              # for i in $(seq 0 100); do echo "Creating $i" && bin/hdfs dfs -put -f /etc/hosts /bench/deep/path/with/many/sub/sub/dirs/$i; done
 
               # Watch out for the exact command you are using! (e.g. don't use "du -h /""). Checl the NameNode logs to
               # make sure you actually produce enough OPA calls.
-              # time bin/hdfs dfs -du -h /bench
+              # time bin/hdfs dfs -du -h /bench/deep/path/with/many/sub/sub/dirs
 
               # So that you can run the benchmark manually
               sleep infinity
