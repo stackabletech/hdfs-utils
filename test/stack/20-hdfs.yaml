@@ -51,6 +51,9 @@ spec:
                 level: INFO
               tech.stackable.hadoop:
                 level: DEBUG
+    # configOverrides:
+    #   hdfs-site.xml:
+    #     hadoop.security.authorization.opa.extended-requests: "true"
     roleGroups:
       default:
         replicas: 2

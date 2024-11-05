@@ -52,11 +52,14 @@ public class StackableAccessControlEnforcer
   private static final Logger LOG = LoggerFactory.getLogger(StackableAccessControlEnforcer.class);
 
   public static final String OPA_POLICY_URL_PROP = "hadoop.security.authorization.opa.policy.url";
+  public static final String EXTENDED_REQUESTS_PROP =
+      "hadoop.security.authorization.opa.extended-requests";
 
   private static final HttpClient HTTP_CLIENT =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
   private final ObjectMapper json;
-  private URI opaUri;
+  private final URI opaUri;
+  private final boolean extendedRequests;
 
   public StackableAccessControlEnforcer() {
     LOG.debug("Starting StackableAccessControlEnforcer");
@@ -72,8 +75,10 @@ public class StackableAccessControlEnforcer
     try {
       opaUri = URI.create(opaPolicyUrl);
     } catch (Exception e) {
-      throw new OpaException.UriInvalid(opaUri, e);
+      throw new OpaException.UriInvalid(opaPolicyUrl, e);
     }
+
+    extendedRequests = configuration.getBoolean(EXTENDED_REQUESTS_PROP, false);
 
     json =
         new ObjectMapper()
@@ -98,7 +103,14 @@ public class StackableAccessControlEnforcer
             // recursion (StackOverflowError)
             .addMixIn(DatanodeDescriptor.class, DatanodeDescriptorMixin.class);
 
-    LOG.debug("Started HdfsOpaAccessControlEnforcer");
+    StringBuilder logStartupStatement = new StringBuilder("Started StackableAccessControlEnforcer");
+    if (this.extendedRequests) {
+      logStartupStatement.append(" sending extended requests");
+    } else {
+      logStartupStatement.append(" sending reduced requests");
+    }
+    logStartupStatement.append(" to OPA url ").append(this.opaUri);
+    LOG.debug(logStartupStatement.toString());
   }
 
   private static class OpaQueryResult {
@@ -158,7 +170,21 @@ public class StackableAccessControlEnforcer
   @Override
   public void checkPermissionWithContext(INodeAttributeProvider.AuthorizationContext authzContext)
       throws AccessControlException {
-    OpaAllowQuery query = new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(authzContext));
+    // When executing "hdfs dfs -du /" the path is set to null. This does not worsen security, as
+    // "/" is the highest level of access that a user can have.
+    if (authzContext.getOperationName().equals("contentSummary")
+        && authzContext.getPath() == null) {
+      authzContext.setPath("/");
+    }
+
+    Object query;
+    if (this.extendedRequests) {
+      query = new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(authzContext));
+    } else {
+      query =
+          new OpaReducedAllowQuery(
+              new OpaReducedAllowQuery.OpaReducedAllowQueryInput(authzContext));
+    }
 
     String body;
     try {

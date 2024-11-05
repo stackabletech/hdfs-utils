@@ -2,7 +2,6 @@ package tech.stackable.hadoop;
 
 import static tech.stackable.hadoop.StackableGroupMapper.OPA_MAPPING_URL_PROP;
 
-import java.net.URI;
 import java.net.http.HttpResponse;
 
 public abstract class OpaException extends RuntimeException {
@@ -22,7 +21,7 @@ public abstract class OpaException extends RuntimeException {
   }
 
   public static final class UriInvalid extends OpaException {
-    public UriInvalid(URI uri, Throwable cause) {
+    public UriInvalid(String uri, Throwable cause) {
       super(
           "Open Policy Agent URI is invalid (see configuration property \""
               + OPA_MAPPING_URL_PROP
