@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Update registry references to oci ([#53]).
+
+[#53]: https://github.com/stackabletech/hdfs-utils/pull/53
+
 ## [0.4.0] - 2024-11-05
 
 ### Changed
