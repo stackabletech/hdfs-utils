@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-03-11
+
 ### Added
 
 - Add build profile for `3.4.1` ([#54]).
