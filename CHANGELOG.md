@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Add build profile for `3.4.1` ([#54]).
+
 ### Changed
 
 - Update registry references to oci ([#53]).
 
 [#53]: https://github.com/stackabletech/hdfs-utils/pull/53
+[#54]: https://github.com/stackabletech/hdfs-utils/pull/54
 
 ## [0.4.0] - 2024-11-05
 
