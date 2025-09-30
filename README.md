@@ -10,9 +10,9 @@ This project contains multiple plugins for Apache Hadoop, which are intended to 
 
 ## Installation
 
-Currently you can compile hdfs-utils against Hadoop 3.3.4, 3.3.6, 3.4.0, 3.4.1 or 3.4.2. You need to specify the version by activating either the `hadoop-3.3.4`, `hadoop-3.3.6`, `hadoop-3.4.0`, `hadoop-3.4.1` or the `hadoop-3.4.2` profile below.
+Currently you can compile hdfs-utils against Hadoop 3.3.6, 3.4.1 or 3.4.2. You need to specify the version by activating either the `hadoop-3.3.6`, `hadoop-3.4.1` or the `hadoop-3.4.2` profile below.
 
-Run `mvn clean package -P hadoop-3.4.0` and put the resulting `target/hdfs-utils-*.jar` file on your HDFS classpath.
+Run e.g. `mvn clean package -P hadoop-3.4.2` and put the resulting `target/hdfs-utils-*.jar` file on your HDFS classpath.
 The easiest way to achieve this is to put it in the directory `/stackable/hadoop/share/hadoop/tools/lib/`.
 The Stackable HDFS already takes care of this, you don't need to do anything in this case.
 

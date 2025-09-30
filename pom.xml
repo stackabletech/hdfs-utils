@@ -294,30 +294,6 @@
       </properties>
     </profile>
     <profile>
-      <id>hadoop-3.3.4</id>
-      <properties>
-        <hadoop.version>3.3.4</hadoop.version>
-        <!-- Taken from https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-common/3.3.4 -->
-        <slf4j.version>1.7.36</slf4j.version>
-        <jackson.version>2.12.7.1</jackson.version>
-      </properties>
-    </profile>
-    <profile>
-      <id>hadoop-3.4.0</id>
-      <!--
-      Users need to explicitly set the version of Hadoop they want to build against
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      -->
-      <properties>
-        <hadoop.version>3.4.0</hadoop.version>
-        <!-- Taken from https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-common/3.4.0 -->
-        <slf4j.version>1.7.36</slf4j.version>
-        <jackson.version>2.12.7.1</jackson.version>
-      </properties>
-    </profile>
-    <profile>
       <id>hadoop-3.4.1</id>
       <!--
       Users need to explicitly set the version of Hadoop they want to build against
