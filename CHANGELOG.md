@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Add build profile for `3.4.2` ([#56]).
+
+[#56]: https://github.com/stackabletech/hdfs-utils/pull/56
+
 ## [0.4.1] - 2025-03-11
 
 ### Added
