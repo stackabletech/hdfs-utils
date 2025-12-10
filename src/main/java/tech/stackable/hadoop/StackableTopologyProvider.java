@@ -233,15 +233,8 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
       LOG.debug("Not a listener: {}", name);
       return name;
     }
-    List<String> ingressAddresses = TopologyUtils.getIngressAddresses(listener);
-    for (String ingressAddress : ingressAddresses) {
-      LOG.debug("Address [{}]", ingressAddress);
-      if (name.equalsIgnoreCase(ingressAddress)) {
-        return resolveListenerEndpoint(listener);
-      }
-    }
-    LOG.info("Not a listener, returning [{}]", name);
-    return name;
+    // We found a listener, so we can resolve it directly
+    return resolveListenerEndpoint(listener);
   }
 
   private String resolveListenerEndpoint(GenericKubernetesResource listener) {
@@ -344,7 +337,19 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   }
 
   private String findColocatedDatanode(Pod clientPod, Map<String, String> nodeToDatanodeIp) {
-    return nodeToDatanodeIp.get(clientPod.getSpec().getNodeName());
+    String clientNodeName = clientPod.getSpec().getNodeName();
+
+    if (clientNodeName == null) {
+      LOG.warn("Client pod {} not yet assigned to node", clientPod.getMetadata().getName());
+      return null;
+    }
+
+    String datanodeIp = nodeToDatanodeIp.get(clientNodeName);
+    if (datanodeIp == null) {
+      LOG.debug("No datanode found on node {}", clientNodeName);
+    }
+
+    return datanodeIp;
   }
 
   private String resolveToIpAddress(String hostname) {
