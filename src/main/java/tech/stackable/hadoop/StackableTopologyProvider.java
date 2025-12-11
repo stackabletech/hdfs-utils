@@ -28,7 +28,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   // Default values
   public static final String DEFAULT_RACK = "/defaultRack";
   private static final int CACHE_EXPIRY_DEFAULT_SECONDS = 5 * 60;
-  private final String LISTENER_VERSION;
+  private String listenerVersion;
 
   private final KubernetesClient client;
   private final List<TopologyLabel> labels;
@@ -41,7 +41,6 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     this.client = new KubernetesClientBuilder().build();
     this.cache = new TopologyCache(getCacheExpiration(), CACHE_EXPIRY_DEFAULT_SECONDS);
     this.labels = TopologyLabel.initializeTopologyLabels();
-    LISTENER_VERSION = getListenerVersion();
 
     logInitializationStatus();
   }
@@ -226,7 +225,11 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     // Listeners are typically few, so fetch all
     // (Individual listener fetches would require knowing the namespace)
     LOG.debug("Fetching all listeners to populate cache");
-    GenericKubernetesResourceList listeners = fetchListeners();
+    if (listenerVersion == null) {
+      listenerVersion = getListenerVersion();
+      LOG.debug("Fetching all listeners in version {}", listenerVersion);
+    }
+    GenericKubernetesResourceList listeners = fetchListeners(listenerVersion);
 
     for (GenericKubernetesResource listener : listeners.getItems()) {
       cacheListenerByNameAndAddresses(listener);
@@ -281,11 +284,11 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     return address.getIp();
   }
 
-  private GenericKubernetesResourceList fetchListeners() {
+  private GenericKubernetesResourceList fetchListeners(String listenerVersion) {
     ResourceDefinitionContext listenerCrd =
         new ResourceDefinitionContext.Builder()
             .withGroup("listeners.stackable.tech")
-            .withVersion(LISTENER_VERSION)
+            .withVersion(listenerVersion)
             .withPlural("listeners")
             .withNamespaced(true)
             .build();
