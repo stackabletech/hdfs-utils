@@ -72,6 +72,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
           labels.stream().map(TopologyLabel::getName).collect(Collectors.toList());
       LOG.info("Initialized with topology labels: {}", labelNames);
     }
+    LOG.debug("Client namespaces {} and config {}", client.namespaces(), client.configMaps());
   }
 
   @Override
@@ -302,6 +303,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
 
   private void cachePodByNameAndIps(Pod pod) {
     String podName = pod.getMetadata().getName();
+    LOG.debug("Refreshing pod cache: adding {}", podName);
     cache.putPod(podName, pod);
 
     // Cache by all IPs - this is crucial for IP-based lookups
