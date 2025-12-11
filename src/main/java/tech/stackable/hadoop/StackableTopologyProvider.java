@@ -36,6 +36,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   private final TopologyCache cache;
 
   public StackableTopologyProvider() {
+    // By default, the client will operate within the current namespace
     this.client = new KubernetesClientBuilder().build();
     this.cache = new TopologyCache(getCacheExpiration(), CACHE_EXPIRY_DEFAULT_SECONDS);
     this.labels = TopologyLabel.initializeTopologyLabels();
@@ -72,7 +73,10 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
           labels.stream().map(TopologyLabel::getName).collect(Collectors.toList());
       LOG.info("Initialized with topology labels: {}", labelNames);
     }
-    LOG.debug("Client namespaces {} and config {}", client.namespaces(), client.configMaps());
+    LOG.debug(
+        "Client namespaces {} and configuration {}",
+        client.getNamespace(),
+        client.getConfiguration());
   }
 
   @Override
