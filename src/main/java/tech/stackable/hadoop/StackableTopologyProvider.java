@@ -28,6 +28,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   // Default values
   public static final String DEFAULT_RACK = "/defaultRack";
   private static final int CACHE_EXPIRY_DEFAULT_SECONDS = 5 * 60;
+  private final String LISTENER_VERSION;
 
   private final KubernetesClient client;
   private final List<TopologyLabel> labels;
@@ -40,6 +41,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     this.client = new KubernetesClientBuilder().build();
     this.cache = new TopologyCache(getCacheExpiration(), CACHE_EXPIRY_DEFAULT_SECONDS);
     this.labels = TopologyLabel.initializeTopologyLabels();
+    LISTENER_VERSION = getListenerVersion();
 
     logInitializationStatus();
   }
@@ -184,6 +186,28 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   // LISTENER RESOLUTION
   // ============================================================================
 
+  private String getListenerVersion() {
+    var crd = client.apiextensions().v1().customResourceDefinitions().withName("listeners").get();
+
+    if (crd != null && !crd.getSpec().getVersions().isEmpty()) {
+      // Select the version that is served and used for storage (the "stable" version)
+      for (var version : crd.getSpec().getVersions()) {
+        if (version.getServed() && version.getStorage()) {
+          return version.getName(); // Prefer the stable version
+        }
+      }
+
+      // If no stable version found, return the first served version as a fallback
+      for (var version : crd.getSpec().getVersions()) {
+        if (version.getServed()) {
+          return version.getName(); // Just pick the first served version if no stable one
+        }
+      }
+    }
+    LOG.error("Unable to fetch CRD version for listeners");
+    throw new RuntimeException("Unable to fetch CRD version for listeners");
+  }
+
   private List<String> resolveListeners(List<String> names) {
     refreshListenerCacheIfNeeded(names);
 
@@ -258,10 +282,10 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   }
 
   private GenericKubernetesResourceList fetchListeners() {
-    // no version is specified here as we are not always going to be on v1alpha1
     ResourceDefinitionContext listenerCrd =
         new ResourceDefinitionContext.Builder()
             .withGroup("listeners.stackable.tech")
+            .withVersion(LISTENER_VERSION)
             .withPlural("listeners")
             .withNamespaced(true)
             .build();
