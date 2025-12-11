@@ -16,8 +16,8 @@ import org.slf4j.LoggerFactory;
  * An implementation of the org.apache.hadoop.net.DNSToSwitchMapping that is used to create a
  * topology out of dataNodes.
  *
- * <p>This class is intended to be run as part of the NameNode process and will be used by the
- * nameNode to retrieve topology strings for dataNodes.
+ * <p>This class is intended to be run as part of the NameNode process (in the same namespace) and
+ * will be used by the nameNode to retrieve topology strings for dataNodes.
  */
 public class StackableTopologyProvider implements DNSToSwitchMapping {
   private final Logger LOG = LoggerFactory.getLogger(StackableTopologyProvider.class);
@@ -47,11 +47,10 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   @Override
   public void reloadCachedMappings() {
     // TODO: According to the upstream comment we should rebuild all cache entries after
-    // invalidating them
-    //  this may mean trying to resolve ip addresses that do not exist any more and things like that
-    // though and
-    //  require some more thought, so we will for now just invalidate the cache.
-    this.cache.invalidateAll();
+    // invalidating them. This may mean trying to resolve ip addresses that do not exist
+    // any more and things like that though and require some more thought, so we will for
+    // now just invalidate the cache.
+    this.cache.invalidateAllTopologyKeys();
   }
 
   @Override
@@ -73,10 +72,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
           labels.stream().map(TopologyLabel::getName).collect(Collectors.toList());
       LOG.info("Initialized with topology labels: {}", labelNames);
     }
-    LOG.debug(
-        "Client namespaces {} and configuration {}",
-        client.getNamespace(),
-        client.getConfiguration());
+    LOG.debug("Client namespace {}", client.getNamespace());
   }
 
   @Override
@@ -106,8 +102,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
 
   private List<String> tryResolveFromCache(List<String> names) {
     // We need to check if we have cached values for all dataNodes contained in this request.
-    // Unless we can answer everything from the cache we have to talk to k8s anyway and can just
-    // recalculate everything
+    // Unless we can answer everything from the cache we will perform a full resolution.
     List<String> cached = names.stream().map(cache::getTopology).collect(Collectors.toList());
     LOG.debug("Cached topologyKeyCache values [{}]", cached);
 
@@ -263,10 +258,10 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   }
 
   private GenericKubernetesResourceList fetchListeners() {
+    // no version is specified here as we are not always going to be on v1alpha1
     ResourceDefinitionContext listenerCrd =
         new ResourceDefinitionContext.Builder()
             .withGroup("listeners.stackable.tech")
-            .withVersion("v1alpha1")
             .withPlural("listeners")
             .withNamespaced(true)
             .build();
@@ -488,8 +483,10 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     Map<String, Map<String, String>> result = new HashMap<>();
     for (Pod pod : dataNodes) {
       Map<String, String> podLabels = pod.getMetadata().getLabels();
+      LOG.debug("Labels for pod [{}]:[{}]....", pod.getMetadata().getName(), podLabels);
 
       for (PodIP podIp : pod.getStatus().getPodIPs()) {
+        LOG.debug("...assigned to pod IP [{}]", podIp.getIp());
         result.put(podIp.getIp(), podLabels);
       }
     }

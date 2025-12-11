@@ -6,7 +6,6 @@ import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /** Manages all caching layers for the topology provider. */
@@ -38,7 +37,7 @@ public class TopologyCache {
     topology.put(key, value);
   }
 
-  void invalidateAll() {
+  void invalidateAllTopologyKeys() {
     topology.invalidateAll();
   }
 
@@ -58,24 +57,12 @@ public class TopologyCache {
     return listeners.getIfPresent(name);
   }
 
-  ConcurrentMap<String, GenericKubernetesResource> getListenerMap() {
-    return listeners.asMap();
-  }
-
   void putListener(String name, GenericKubernetesResource listener) {
     listeners.put(name, listener);
   }
 
-  boolean hasAllListeners(List<String> names) {
-    return names.stream().noneMatch(name -> listeners.getIfPresent(name) == null);
-  }
-
   Pod getPod(String name) {
     return pods.getIfPresent(name);
-  }
-
-  ConcurrentMap<String, Pod> getPodMap() {
-    return pods.asMap();
   }
 
   void putPod(String name, Pod pod) {

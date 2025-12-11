@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 public class TopologyLabel {
   private static final Logger LOG = LoggerFactory.getLogger(TopologyLabel.class);
   public static final String VARNAME_LABELS = "TOPOLOGY_LABELS";
-  public static final String VARNAME_MAXLEVELS = "TOPOLOGY_MAX_LEVELS";
+  public static final String VARNAME_MAX_LEVELS = "TOPOLOGY_MAX_LEVELS";
   private static final int MAX_LEVELS_DEFAULT = 2;
 
   public enum Type {
@@ -32,7 +32,7 @@ public class TopologyLabel {
     String[] parts = config.toLowerCase(Locale.ROOT).split(":", 2);
 
     if (parts.length != 2) {
-      LOG.warn("Invalid topology label format '{}' - expected '[node|pod]:<labelname>'", config);
+      LOG.warn("Invalid topology label format '{}' - expected '[node|pod]:<label>'", config);
       this.type = Type.UNDEFINED;
       this.name = null;
       return;
@@ -102,7 +102,7 @@ public class TopologyLabel {
 
     if (labels.stream().anyMatch(TopologyLabel::isUndefined)) {
       LOG.error(
-          "Invalid topology label configuration - labels must be in format '[pod|node]:<labelname>'");
+          "Invalid topology label configuration - labels must be in format '[pod|node]:<label>'");
       throw new RuntimeException("Invalid topology label configuration");
     }
 
@@ -111,6 +111,6 @@ public class TopologyLabel {
 
   private static int getMaxLabels() {
     return TopologyUtils.parseIntFromEnv(
-        VARNAME_MAXLEVELS, MAX_LEVELS_DEFAULT, "maximum topology levels");
+        VARNAME_MAX_LEVELS, MAX_LEVELS_DEFAULT, "maximum topology levels");
   }
 }

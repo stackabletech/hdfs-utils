@@ -29,6 +29,7 @@ public class TopologyUtils {
   public static int parseIntFromEnv(String varName, int defaultValue, String description) {
     String value = System.getenv(varName);
     if (value == null || value.isEmpty()) {
+      LOG.info("Set {} to default value {}", description, defaultValue);
       return defaultValue;
     }
 
