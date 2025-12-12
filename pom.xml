@@ -57,6 +57,7 @@
     <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
 
     <kubernetes-client.version>7.4.0</kubernetes-client.version>
+    <okio.version>1.17.6</okio.version>
   </properties>
 
   <dependencies>
@@ -99,6 +100,17 @@
       <groupId>io.fabric8</groupId>
       <artifactId>kubernetes-client-api</artifactId>
       <version>${kubernetes-client.version}</version>
+    </dependency>
+    <dependency>
+      <!--
+      We bump this here to get rid of a critical CVE in okio 1.15 which we get via kubernetes-client.
+      We tried understanding _why_ we get 1.15 as dependency:tree for kubernetes-client says we should be getting 1.17.6.
+      As we failed to understand this we did this short/medium term fix of adding an explicit dependency here which should override the one coming from kubernetes-client.
+      This can be removed again as soon as we get the proper version from kubernetes-client.
+      -->
+      <groupId>com.squareup.okio</groupId>
+      <artifactId>okio</artifactId>
+      <version>${okio.version}</version>
     </dependency>
     <!-- End of needed by topology-provider -->
     <dependency>
