@@ -3,6 +3,7 @@ package tech.stackable.hadoop;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -186,25 +187,29 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   // ============================================================================
 
   private String getListenerVersion() {
-    var crd = client.apiextensions().v1().customResourceDefinitions().withName("listeners").get();
+    try {
+      var crd = client.apiextensions().v1().customResourceDefinitions().withName("listeners").get();
 
-    if (crd != null && !crd.getSpec().getVersions().isEmpty()) {
-      // Select the version that is served and used for storage (the "stable" version)
-      for (var version : crd.getSpec().getVersions()) {
-        if (version.getServed() && version.getStorage()) {
-          return version.getName(); // Prefer the stable version
+      if (crd != null && !crd.getSpec().getVersions().isEmpty()) {
+        // Select the version that is served and used for storage (the "stable" version)
+        for (var version : crd.getSpec().getVersions()) {
+          if (version.getServed() && version.getStorage()) {
+            return version.getName(); // Prefer the stable version
+          }
+        }
+
+        // If no stable version found, return the first served version as a fallback
+        for (var version : crd.getSpec().getVersions()) {
+          if (version.getServed()) {
+            return version.getName(); // Just pick the first served version if no stable one
+          }
         }
       }
-
-      // If no stable version found, return the first served version as a fallback
-      for (var version : crd.getSpec().getVersions()) {
-        if (version.getServed()) {
-          return version.getName(); // Just pick the first served version if no stable one
-        }
-      }
+      throw new RuntimeException("Unable to fetch CRD version for listeners");
+    } catch (KubernetesClientException e) {
+      LOG.error("Unable to fetch CRD version for listeners. Failed with {}", e);
+      throw new RuntimeException("Unable to fetch CRD version for listeners");
     }
-    LOG.error("Unable to fetch CRD version for listeners");
-    throw new RuntimeException("Unable to fetch CRD version for listeners");
   }
 
   private List<String> resolveListeners(List<String> names) {
