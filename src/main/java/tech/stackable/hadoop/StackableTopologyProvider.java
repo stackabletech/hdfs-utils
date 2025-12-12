@@ -188,7 +188,13 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
 
   private String getListenerVersion() {
     try {
-      var crd = client.apiextensions().v1().customResourceDefinitions().withName("listeners").get();
+      var crd =
+          client
+              .apiextensions()
+              .v1()
+              .customResourceDefinitions()
+              .withName("listeners.listeners.stackable.tech")
+              .get();
 
       if (crd != null && !crd.getSpec().getVersions().isEmpty()) {
         // Select the version that is served and used for storage (the "stable" version)
@@ -205,7 +211,8 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
           }
         }
       }
-      throw new RuntimeException("Unable to fetch CRD version for listeners");
+      LOG.error("Unable to fetch CRD version for listeners. Returning default value.");
+      return "v1alpha1";
     } catch (KubernetesClientException e) {
       LOG.error("Unable to fetch CRD version for listeners. Failed with {}", e);
       throw new RuntimeException("Unable to fetch CRD version for listeners");
