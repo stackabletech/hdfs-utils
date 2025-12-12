@@ -29,6 +29,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   // Default values
   public static final String DEFAULT_RACK = "/defaultRack";
   private static final int CACHE_EXPIRY_DEFAULT_SECONDS = 5 * 60;
+  // Cache on first usage (not on start-up to avoid attempts before listeners are available)
   private String listenerVersion;
 
   private final KubernetesClient client;
@@ -200,21 +201,22 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
         // Select the version that is served and used for storage (the "stable" version)
         for (var version : crd.getSpec().getVersions()) {
           if (version.getServed() && version.getStorage()) {
-            return version.getName(); // Prefer the stable version
+            LOG.debug("Returning served/stored version: {}", version.getName());
+            return version.getName();
           }
         }
-
         // If no stable version found, return the first served version as a fallback
         for (var version : crd.getSpec().getVersions()) {
           if (version.getServed()) {
-            return version.getName(); // Just pick the first served version if no stable one
+            LOG.debug("Returning served/un-stored version: {}", version.getName());
+            return version.getName();
           }
         }
       }
       LOG.error("Unable to fetch CRD version for listeners. Returning default value.");
       return "v1alpha1";
     } catch (KubernetesClientException e) {
-      LOG.error("Unable to fetch CRD version for listeners. Failed with {}", e);
+      LOG.error("Unable to fetch CRD version for listeners. Throwing exception.", e);
       throw new RuntimeException("Unable to fetch CRD version for listeners");
     }
   }
@@ -233,9 +235,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
       LOG.debug("Listener cache contains all required entries");
       return;
     }
-
     // Listeners are typically few, so fetch all
-    // (Individual listener fetches would require knowing the namespace)
     LOG.debug("Fetching all listeners to populate cache");
     if (listenerVersion == null) {
       listenerVersion = getListenerVersion();
@@ -250,10 +250,12 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
 
   private void cacheListenerByNameAndAddresses(GenericKubernetesResource listener) {
     String name = listener.getMetadata().getName();
+    LOG.debug("Caching listener by name: {}", name);
     cache.putListener(name, listener);
 
     // Also cache by ingress addresses for quick lookup
     for (String address : TopologyUtils.getIngressAddresses(listener)) {
+      LOG.debug("Caching listener by address: {}", address);
       cache.putListener(address, listener);
     }
   }
