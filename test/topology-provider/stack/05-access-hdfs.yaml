@@ -1,0 +1,63 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: access-hdfs
+spec:
+  template:
+    spec:
+      containers:
+        - name: access-hdfs
+          image: oci.stackable.tech/sandbox/andrew/hadoop:3.4.2-stackable0.0.0-topprov
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HADOOP_CONF_DIR
+              value: /stackable/conf/hdfs
+            - name: KRB5_CONFIG
+              value: /stackable/kerberos/krb5.conf
+            - name: HADOOP_OPTS
+              value: -Djava.security.krb5.conf=/stackable/kerberos/krb5.conf
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -ex
+              klist -k /stackable/kerberos/keytab
+              kinit -kt /stackable/kerberos/keytab testuser/access-hdfs.default.svc.cluster.local
+              klist
+
+              #bin/hdfs dfs -mkdir /stackable
+              #bin/hdfs dfs -chown -R access-hive /stackable
+              #bin/hdfs dfs -mkdir /access-hive
+              #bin/hdfs dfs -chown -R access-hive /access-hive
+              bin/hdfs dfs -ls /
+              #bin/hdfs dfs -ls -d /
+              
+              sleep infinity
+          volumeMounts:
+            - name: hdfs-config
+              mountPath: /stackable/conf/hdfs
+            - name: kerberos
+              mountPath: /stackable/kerberos
+      volumes:
+        - name: hdfs-config
+          configMap:
+            name: simple-hdfs
+        - name: kerberos
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                annotations:
+                  secrets.stackable.tech/class: kerberos-default
+                  secrets.stackable.tech/scope: service=access-hdfs
+                  secrets.stackable.tech/kerberos.service.names: testuser
+              spec:
+                storageClassName: secrets.stackable.tech
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: "1"
+      securityContext:
+        fsGroup: 1000
+      restartPolicy: OnFailure

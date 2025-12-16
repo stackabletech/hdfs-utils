@@ -119,24 +119,30 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   private List<String> performFullResolution(List<String> names) {
     LOG.debug("Performing full topology resolution for: {}", names);
 
-    // Step 1: Gather all dataNodes
+    // Pre-requisites : fetch all dataNodes and build label lookup maps from them
     List<Pod> dataNodes = fetchDataNodes();
-
-    // Step 2: Resolve listeners to actual datanode IPs
-    List<String> resolvedNames = resolveListeners(names);
-
-    // Step 3: Build label lookup maps
     Map<String, Map<String, String>> podLabels = buildPodLabelMap(dataNodes);
     Map<String, Map<String, String>> nodeLabels = buildNodeLabelMap(dataNodes);
 
-    // Step 4: Build node-to-datanode map for O(1) colocated lookups
+    // Build node-to-datanode map for O(1) colocated lookups
     Map<String, String> nodeToDatanodeIp = buildNodeToDatanodeMap(dataNodes);
 
-    // Step 5: Resolve client pods to co-located dataNodes
-    List<String> datanodeIps =
-        resolveClientPodsToDataNodes(resolvedNames, podLabels, nodeToDatanodeIp);
+    // Resolve masqueraded IPs to nodes: do this before inspecting possible listener-
+    // or other pod-IPs as we don't want to mistakenly treat a masqueraded IP as a
+    // cache-miss
+    List<String> resolvedNames = tryResolveNodes(names, nodeToDatanodeIp);
 
-    // Step 6: Build topology strings and cache results
+    // Resolve dataNode listeners to datanode IPs
+    resolvedNames = tryResolveListeners(resolvedNames);
+
+    // Step : Resolve client pods to co-located dataNodes
+    List<String> datanodeIps =
+        tryResolveClientPodsToDataNodes(resolvedNames, podLabels, nodeToDatanodeIp);
+
+    // Step : Build topology strings and cache results
+    // IP-masquerading can mean that the advertised IP is either a client Pod's node IP,
+    // or an IP that is nto easily associated with a node (e.g. if the veth interface is
+    // used).
     return buildAndCacheTopology(names, datanodeIps, podLabels, nodeLabels);
   }
 
@@ -184,6 +190,25 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   }
 
   // ============================================================================
+  // NODE RESOLUTION
+  // ============================================================================
+
+  private List<String> tryResolveNodes(List<String> names, Map<String, String> nodeToDatanodeIp) {
+    List<String> result = new ArrayList<>();
+
+    for (String name : names) {
+      String dataNodeIp = nodeToDatanodeIp.get(name);
+      if (dataNodeIp == null) {
+        result.add(name);
+      } else {
+        LOG.debug("Returning dataNode {} for {}", name, dataNodeIp);
+        result.add(dataNodeIp);
+      }
+    }
+    return result;
+  }
+
+  // ============================================================================
   // LISTENER RESOLUTION
   // ============================================================================
 
@@ -221,10 +246,10 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     }
   }
 
-  private List<String> resolveListeners(List<String> names) {
+  private List<String> tryResolveListeners(List<String> names) {
     refreshListenerCacheIfNeeded(names);
 
-    return names.stream().map(this::resolveListenerToDatanode).collect(Collectors.toList());
+    return names.stream().map(this::tryResolveListenerToDatanode).collect(Collectors.toList());
   }
 
   private void refreshListenerCacheIfNeeded(List<String> names) {
@@ -268,7 +293,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
    *     listener
    * @return either the name (for non-listener) or the dataNode IP to which this listener resolves
    */
-  private String resolveListenerToDatanode(String name) {
+  private String tryResolveListenerToDatanode(String name) {
     GenericKubernetesResource listener = cache.getListener(name);
     if (listener == null) {
       LOG.debug("Not a listener: {}", name);
@@ -314,7 +339,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   // CLIENT POD RESOLUTION
   // ============================================================================
 
-  private List<String> resolveClientPodsToDataNodes(
+  private List<String> tryResolveClientPodsToDataNodes(
       List<String> names,
       Map<String, Map<String, String>> podLabels,
       Map<String, String> nodeToDatanodeIp) {
@@ -408,7 +433,8 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
 
   /**
    * Build a map from Kubernetes node name to datanode IP. This enables O(1) lookup when finding
-   * co-located dataNodes for client pods.
+   * co-located dataNodes for client pods. This map will contain as keys both the node name and all
+   * its addresses (as the address may be used by pods with IP masquerading).
    *
    * <p>Note: If multiple dataNodes run on the same node, the last one wins. This is acceptable
    * because all dataNodes on the same node have the same topology.
@@ -421,11 +447,17 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
       String dataNodeIp = dataNode.getStatus().getPodIP();
 
       if (nodeName != null && dataNodeIp != null) {
+        LOG.debug("Assigned to node-name [{}/{}]", nodeName, dataNodeIp);
         nodeToDatanode.put(nodeName, dataNodeIp);
+        Node node = getOrFetchNode(nodeName);
+        for (NodeAddress nodeAddress : node.getStatus().getAddresses()) {
+          LOG.debug("Assigned to node-address [{}/{}]", nodeAddress.getAddress(), dataNodeIp);
+          nodeToDatanode.put(nodeAddress.getAddress(), dataNodeIp);
+        }
       }
     }
 
-    LOG.debug("Built node-to-datanode map with {} entries", nodeToDatanode.size());
+    LOG.debug("Built node-to-datanode map {}", nodeToDatanode);
     return nodeToDatanode;
   }
 
@@ -474,7 +506,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
    * Given a list of dataNodes this function will resolve which dataNodes run on which node as well
    * as all the ips assigned to a dataNodes. It will then return a mapping of every ip address to
    * the labels that are attached to the "physical" node running the dataNodes that this ip belongs
-   * to.
+   * to. It will also do this for the node addresses as calling pods may masquerade as node IPs.
    *
    * @param dataNodes List of all in-scope dataNodes (datanode pods in this namespace)
    * @return Map of ip addresses to labels of the node running the pod that the ip address belongs
@@ -482,11 +514,11 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
    */
   private Map<String, Map<String, String>> buildNodeLabelMap(List<Pod> dataNodes) {
     Map<String, Map<String, String>> result = new HashMap<>();
-    for (Pod pod : dataNodes) {
-      String nodeName = pod.getSpec().getNodeName();
+    for (Pod dataNode : dataNodes) {
+      String nodeName = dataNode.getSpec().getNodeName();
 
       if (nodeName == null) {
-        LOG.warn("Pod [{}] not yet assigned to node, retrying", pod.getMetadata().getName());
+        LOG.warn("Pod [{}] not yet assigned to node, retrying", dataNode.getMetadata().getName());
         return result;
       }
 
@@ -494,7 +526,12 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
       Map<String, String> nodeLabels = node.getMetadata().getLabels();
       LOG.debug("Labels for node [{}]:[{}]....", nodeName, nodeLabels);
 
-      for (PodIP podIp : pod.getStatus().getPodIPs()) {
+      for (NodeAddress nodeAddress : node.getStatus().getAddresses()) {
+        LOG.debug("...assigned to node address [{}]", nodeAddress.getAddress());
+        result.put(nodeAddress.getAddress(), nodeLabels);
+      }
+
+      for (PodIP podIp : dataNode.getStatus().getPodIPs()) {
         LOG.debug("...assigned to IP [{}]", podIp.getIp());
         result.put(podIp.getIp(), nodeLabels);
       }
