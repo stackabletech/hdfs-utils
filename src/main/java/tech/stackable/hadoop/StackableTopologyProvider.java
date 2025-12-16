@@ -127,45 +127,51 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     // Build node-to-datanode map for O(1) colocated lookups
     Map<String, String> nodeToDatanodeIp = buildNodeToDatanodeMap(dataNodes);
 
+    List<String> topologies = new ArrayList<>();
     // Resolve masqueraded IPs to nodes: do this before inspecting possible listener-
     // or other pod-IPs as we don't want to mistakenly treat a masqueraded IP as a
-    // cache-miss
-    List<String> resolvedNames = tryResolveNodes(names, nodeToDatanodeIp);
-
-    // Resolve dataNode listeners to datanode IPs
-    resolvedNames = tryResolveListeners(resolvedNames);
-
-    // Step : Resolve client pods to co-located dataNodes
-    List<String> datanodeIps =
-        tryResolveClientPodsToDataNodes(resolvedNames, podLabels, nodeToDatanodeIp);
-
-    // Step : Build topology strings and cache results
-    // IP-masquerading can mean that the advertised IP is either a client Pod's node IP,
-    // or an IP that is nto easily associated with a node (e.g. if the veth interface is
-    // used).
-    return buildAndCacheTopology(names, datanodeIps, podLabels, nodeLabels);
-  }
-
-  private List<String> buildAndCacheTopology(
-      List<String> originalNames,
-      List<String> datanodeIps,
-      Map<String, Map<String, String>> podLabels,
-      Map<String, Map<String, String>> nodeLabels) {
-    List<String> result = new ArrayList<>();
-    for (int i = 0; i < datanodeIps.size(); i++) {
-      String datanodeIp = datanodeIps.get(i);
-      String originalName = originalNames.get(i);
-
-      String topology = buildTopologyString(datanodeIp, podLabels, nodeLabels);
-      result.add(topology);
-
-      // Cache both the resolved IP and original name
-      cache.putTopology(datanodeIp, topology);
-      cache.putTopology(originalName, topology);
+    // cache-miss. Examine each name in a loop, so we have the chance to short-circuit.
+    for (String name : names) {
+      String datanodeIp = tryNodeOrListenerOrPod(name, nodeToDatanodeIp, podLabels);
+      // Build topology strings and cache results
+      String topology = buildAndCacheTopology(name, datanodeIp, podLabels, nodeLabels);
+      topologies.add(topology);
     }
 
-    LOG.info("Built topology: {}", result);
-    return result;
+    return topologies;
+  }
+
+  private String tryNodeOrListenerOrPod(
+      String name,
+      Map<String, String> nodeToDatanodeIp,
+      Map<String, Map<String, String>> podLabels) {
+    String dataNodeIp = nodeToDatanodeIp.get(name);
+    if (dataNodeIp != null) {
+      return dataNodeIp;
+    } else {
+      String resolvedListener = tryResolveListener(name);
+      if (resolvedListener != null) {
+        return resolvedListener;
+      } else {
+        return tryResolveClientPodToDataNode(name, podLabels, nodeToDatanodeIp);
+      }
+    }
+  }
+
+  private String buildAndCacheTopology(
+      String originalName,
+      String datanodeIp,
+      Map<String, Map<String, String>> podLabels,
+      Map<String, Map<String, String>> nodeLabels) {
+
+    String topology = buildTopologyString(datanodeIp, podLabels, nodeLabels);
+
+    // Cache both the resolved IP and original name
+    cache.putTopology(datanodeIp, topology);
+    cache.putTopology(originalName, topology);
+
+    LOG.info("Built topology: {}", topology);
+    return topology;
   }
 
   // ============================================================================
@@ -187,25 +193,6 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
             .map(dataNode -> dataNode.getMetadata().getName())
             .collect(Collectors.toList()));
     return dataNodes;
-  }
-
-  // ============================================================================
-  // NODE RESOLUTION
-  // ============================================================================
-
-  private List<String> tryResolveNodes(List<String> names, Map<String, String> nodeToDatanodeIp) {
-    List<String> result = new ArrayList<>();
-
-    for (String name : names) {
-      String dataNodeIp = nodeToDatanodeIp.get(name);
-      if (dataNodeIp == null) {
-        result.add(name);
-      } else {
-        LOG.debug("Returning dataNode {} for {}", name, dataNodeIp);
-        result.add(dataNodeIp);
-      }
-    }
-    return result;
   }
 
   // ============================================================================
@@ -246,20 +233,18 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     }
   }
 
-  private List<String> tryResolveListeners(List<String> names) {
-    refreshListenerCacheIfNeeded(names);
+  private String tryResolveListener(String name) {
+    refreshListenerCacheIfNeeded(name);
 
-    return names.stream().map(this::tryResolveListenerToDatanode).collect(Collectors.toList());
+    return tryResolveListenerToDatanode(name);
   }
 
-  private void refreshListenerCacheIfNeeded(List<String> names) {
-    List<String> missingNames =
-        names.stream().filter(name -> cache.getListener(name) == null).collect(Collectors.toList());
-
-    if (missingNames.isEmpty()) {
+  private void refreshListenerCacheIfNeeded(String name) {
+    if (cache.getListener(name) != null) {
       LOG.debug("Listener cache contains all required entries");
       return;
     }
+
     // Listeners are typically few, so fetch all
     LOG.debug("Fetching all listeners to populate cache");
     if (listenerVersion == null) {
@@ -339,21 +324,19 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   // CLIENT POD RESOLUTION
   // ============================================================================
 
-  private List<String> tryResolveClientPodsToDataNodes(
-      List<String> names,
+  private String tryResolveClientPodToDataNode(
+      String name,
       Map<String, Map<String, String>> podLabels,
       Map<String, String> nodeToDatanodeIp) {
 
-    refreshPodCacheIfNeeded(names);
+    refreshPodCacheIfNeeded(name);
 
-    return names.stream()
-        .map(name -> resolveToDatanodeOrKeep(name, podLabels, nodeToDatanodeIp))
-        .collect(Collectors.toList());
+    return resolveToDatanodeOrKeep(name, podLabels, nodeToDatanodeIp);
   }
 
-  private void refreshPodCacheIfNeeded(List<String> names) {
-    if (cache.hasAllPods(names)) {
-      LOG.debug("Pod cache contains all required entries");
+  private void refreshPodCacheIfNeeded(String name) {
+    if (cache.getPod(name) != null) {
+      LOG.debug("Pod cache contains entry");
       return;
     }
 
