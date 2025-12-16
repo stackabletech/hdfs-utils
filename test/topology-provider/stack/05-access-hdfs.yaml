@@ -32,7 +32,7 @@ spec:
               #bin/hdfs dfs -chown -R access-hive /access-hive
               bin/hdfs dfs -ls /
               #bin/hdfs dfs -ls -d /
-              
+
               sleep infinity
           volumeMounts:
             - name: hdfs-config
