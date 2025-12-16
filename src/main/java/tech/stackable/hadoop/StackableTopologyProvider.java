@@ -282,7 +282,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     GenericKubernetesResource listener = cache.getListener(name);
     if (listener == null) {
       LOG.debug("Not a listener: {}", name);
-      return name;
+      return null;
     }
     // We found a listener, so we can resolve it directly
     return resolveListenerEndpoint(listener);
