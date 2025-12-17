@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Refactored topology-provider to improve cache usage and readability ([#60]).
+
+[#60]: https://github.com/stackabletech/hdfs-utils/pull/60
+
 ## [0.4.2] - 2025-09-30
 
 ### Added
