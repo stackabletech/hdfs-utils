@@ -19,7 +19,7 @@ metadata:
 spec:
   image:
     productVersion: 3.4.2
-    custom: oci.stackable.tech/sandbox/andrew/hadoop:3.4.2-stackable0.0.0-topprov
+    custom: oci.stackable.tech/sandbox/hadoop:3.4.2-stackable0.0.0-dev
     pullPolicy: IfNotPresent
   clusterConfig:
     dfsReplication: 1
@@ -48,6 +48,8 @@ spec:
     configOverrides: &configOverrides
       core-site.xml:
         hadoop.user.group.static.mapping.overrides: "dr.who=;nn=;nm=;jn=;testuser=supergroup;"
+    envOverrides:
+      HADOOP_NAMENODE_OPTS: -agentlib:jdwp=transport=dt_socket,address=*:5005,server=y,suspend=n
     roleGroups:
       default:
         replicas: 2

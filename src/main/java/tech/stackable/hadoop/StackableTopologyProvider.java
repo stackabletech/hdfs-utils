@@ -582,7 +582,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
                 for (PodIP ip : pod.getStatus().getPodIPs()) {
                   cache.putPod(ip.getIp(), pod);
                 }
-                LOG.info("Pod {} added", pod.getMetadata().getName());
+                LOG.debug("Pod {} added", pod.getMetadata().getName());
               }
 
               @Override
@@ -591,7 +591,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
                 for (PodIP ip : oldPod.getStatus().getPodIPs()) {
                   cache.putPod(ip.getIp(), newPod);
                 }
-                LOG.info("Pod {} updated", oldPod.getMetadata().getName());
+                LOG.trace("Pod {} updated", oldPod.getMetadata().getName());
               }
 
               @Override
@@ -600,7 +600,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
                 for (PodIP ip : pod.getStatus().getPodIPs()) {
                   cache.deletePod(ip.getIp());
                 }
-                LOG.info("Pod {} deleted", pod.getMetadata().getName());
+                LOG.debug("Pod {} deleted", pod.getMetadata().getName());
               }
             },
             INFORMER_POLL_SECONDS * 1000L);

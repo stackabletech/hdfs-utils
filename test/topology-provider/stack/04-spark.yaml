@@ -12,7 +12,7 @@ spec:
   mainApplicationFile: local:///tmp/spark-terasort-1.2-SNAPSHOT.jar
   mainClass: com.github.ehiggs.spark.terasort.TeraGen
   args:
-    - "100M"
+    - "10M"
     - "hdfs://simple-hdfs/user/stackable/teragen_output"
   sparkConf:
     "spark.driver.extraClassPath": "/etc/hadoop/conf/:/stackable/spark/extra-jars/*"
