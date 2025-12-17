@@ -69,6 +69,10 @@ public class TopologyCache {
     pods.put(name, pod);
   }
 
+  void deletePod(String name) {
+    pods.invalidate(name);
+  }
+
   boolean hasAllPods(List<String> names) {
     return names.stream().noneMatch(name -> pods.getIfPresent(name) == null);
   }

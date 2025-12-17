@@ -5,9 +5,13 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
+import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.fabric8.kubernetes.client.informers.SharedInformerFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.apache.hadoop.net.DNSToSwitchMapping;
 import org.slf4j.Logger;
@@ -29,11 +33,13 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
   // Default values
   public static final String DEFAULT_RACK = "/defaultRack";
   private static final int CACHE_EXPIRY_DEFAULT_SECONDS = 5 * 60;
+  private static final int INFORMER_POLL_SECONDS = 30;
   // Cache on first usage (not on start-up to avoid attempts before listeners are available)
   private String listenerVersion;
 
   private final KubernetesClient client;
   private final List<TopologyLabel> labels;
+  private final SharedInformerFactory sharedInformerFactory;
 
   // Caching layers
   private final TopologyCache cache;
@@ -43,6 +49,8 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     this.client = new KubernetesClientBuilder().build();
     this.cache = new TopologyCache(getCacheExpiration(), CACHE_EXPIRY_DEFAULT_SECONDS);
     this.labels = TopologyLabel.initializeTopologyLabels();
+    this.sharedInformerFactory = client.informers();
+    startPodInformer();
 
     logInitializationStatus();
   }
@@ -149,6 +157,10 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     if (dataNodeIp != null) {
       return dataNodeIp;
     } else {
+      // If a simple dataNode lookup does not work, we have to decide whether we
+      // want to have the overhead of fetching the listeners, or of fetching all
+      // pods in the namespace. Opt for listeners first, as there are typically
+      // fewer of them.
       String resolvedListener = tryResolveListener(name);
       if (resolvedListener != null) {
         return resolvedListener;
@@ -552,5 +564,60 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
       }
     }
     return result;
+  }
+
+  // ============================================================================
+  // INFORMERS
+  // ============================================================================
+
+  private void startPodInformer() {
+    client
+        .pods()
+        .inNamespace(client.getNamespace())
+        .inform(
+            new ResourceEventHandler<>() {
+              @Override
+              public void onAdd(Pod pod) {
+                cache.putPod(pod.getMetadata().getName(), pod);
+                for (PodIP ip : pod.getStatus().getPodIPs()) {
+                  cache.putPod(ip.getIp(), pod);
+                }
+                LOG.info("Pod {} added", pod.getMetadata().getName());
+              }
+
+              @Override
+              public void onUpdate(Pod oldPod, Pod newPod) {
+                cache.putPod(oldPod.getMetadata().getName(), newPod);
+                for (PodIP ip : oldPod.getStatus().getPodIPs()) {
+                  cache.putPod(ip.getIp(), newPod);
+                }
+                LOG.info("Pod {} updated", oldPod.getMetadata().getName());
+              }
+
+              @Override
+              public void onDelete(Pod pod, boolean deletedFinalStateUnknown) {
+                cache.deletePod(pod.getMetadata().getName());
+                for (PodIP ip : pod.getStatus().getPodIPs()) {
+                  cache.deletePod(ip.getIp());
+                }
+                LOG.info("Pod {} deleted", pod.getMetadata().getName());
+              }
+            },
+            INFORMER_POLL_SECONDS * 1000L);
+
+    Future<Void> future = sharedInformerFactory.startAllRegisteredInformers();
+
+    try {
+      // this will block until complete
+      LOG.debug("Waiting for informer registration to complete...");
+      future.get();
+    } catch (InterruptedException e) {
+      LOG.error("Pod Informer initialization was interrupted", e);
+      throw new RuntimeException(e);
+    } catch (ExecutionException e) {
+      LOG.error("Pod Informer initialization encountered an exception", e);
+      throw new RuntimeException(e);
+    }
+    LOG.info("Pod Informer initialized.");
   }
 }
