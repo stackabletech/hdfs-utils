@@ -15,3 +15,4 @@ kubectl apply -f ./hdfs-utils/test/topology-provider/stack/03-hdfs.yaml
 kubectl apply -f ./hdfs-utils/test/topology-provider/stack/04-spark.yaml
 kubectl apply -f ./hdfs-utils/test/topology-provider/stack/05-access-hdfs.yaml
 ```
+

@@ -305,12 +305,18 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     Endpoints endpoint = client.endpoints().withName(listenerName).get();
     LOG.debug("Matched ingressAddress [{}]", listenerName);
 
-    if (endpoint.getSubsets().isEmpty()) {
+    List<EndpointSubset> subsets = endpoint != null ? endpoint.getSubsets() : null;
+    if (subsets == null || subsets.isEmpty()) {
       LOG.warn("Endpoint {} has no subsets - pod may be restarting", listenerName);
       return listenerName;
     }
 
-    EndpointAddress address = endpoint.getSubsets().get(0).getAddresses().get(0);
+    List<EndpointAddress> addresses = subsets.get(0).getAddresses();
+    if (addresses == null || addresses.isEmpty()) {
+      LOG.warn("Endpoint {} has no ready addresses - pod may not be ready", listenerName);
+      return listenerName;
+    }
+    EndpointAddress address = addresses.get(0);
     LOG.info(
         "Resolved listener {} to IP {} on node {}",
         listenerName,
@@ -366,9 +372,12 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     LOG.debug("Refreshing pod cache: adding {}", podName);
     cache.putPod(podName, pod);
 
-    // Cache by all IPs - this is crucial for IP-based lookups
-    for (PodIP ip : pod.getStatus().getPodIPs()) {
-      cache.putPod(ip.getIp(), pod);
+    PodStatus podStatus = pod.getStatus();
+    if (podStatus != null && podStatus.getPodIPs() != null) {
+      // Cache by all IPs - this is crucial for IP-based lookups
+      for (PodIP ip : podStatus.getPodIPs()) {
+        cache.putPod(ip.getIp(), pod);
+      }
     }
   }
 
@@ -421,7 +430,7 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
       LOG.debug("Resolved {} to {}", hostname, ip);
       return ip;
     } catch (UnknownHostException e) {
-      LOG.warn("Failed to resolve address: {} - defaulting to {}", hostname, DEFAULT_RACK);
+      LOG.warn("Failed to resolve address: {}", hostname);
       return hostname;
     }
   }
@@ -439,12 +448,16 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
 
     for (Pod dataNode : dataNodes) {
       String nodeName = dataNode.getSpec().getNodeName();
-      String dataNodeIp = dataNode.getStatus().getPodIP();
+      PodStatus podStatus = dataNode.getStatus();
+      String dataNodeIp = podStatus != null ? podStatus.getPodIP() : null;
 
       if (nodeName != null && dataNodeIp != null) {
+        Node node = getOrFetchNode(nodeName);
+        if (node == null) {
+          continue;
+        }
         LOG.debug("Assigned to node-name [{}/{}]", nodeName, dataNodeIp);
         nodeToDatanode.put(nodeName, dataNodeIp);
-        Node node = getOrFetchNode(nodeName);
         for (NodeAddress nodeAddress : node.getStatus().getAddresses()) {
           LOG.debug("Assigned to node-address [{}/{}]", nodeAddress.getAddress(), dataNodeIp);
           nodeToDatanode.put(nodeAddress.getAddress(), dataNodeIp);
@@ -513,11 +526,14 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
       String nodeName = dataNode.getSpec().getNodeName();
 
       if (nodeName == null) {
-        LOG.warn("Pod [{}] not yet assigned to node, retrying", dataNode.getMetadata().getName());
-        return result;
+        LOG.warn("Pod [{}] not yet assigned to node...", dataNode.getMetadata().getName());
+        continue;
       }
 
       Node node = getOrFetchNode(nodeName);
+      if (node == null) {
+        continue;
+      }
       Map<String, String> nodeLabels = node.getMetadata().getLabels();
       LOG.debug("Labels for node [{}]:[{}]....", nodeName, nodeLabels);
 
@@ -526,9 +542,12 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
         result.put(nodeAddress.getAddress(), nodeLabels);
       }
 
-      for (PodIP podIp : dataNode.getStatus().getPodIPs()) {
-        LOG.debug("...assigned to IP [{}]", podIp.getIp());
-        result.put(podIp.getIp(), nodeLabels);
+      PodStatus podStatus = dataNode.getStatus();
+      if (podStatus != null && podStatus.getPodIPs() != null) {
+        for (PodIP podIp : podStatus.getPodIPs()) {
+          LOG.debug("...assigned to IP [{}]", podIp.getIp());
+          result.put(podIp.getIp(), nodeLabels);
+        }
       }
     }
     return result;
@@ -539,6 +558,10 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
     if (node == null) {
       LOG.debug("Fetching node: {}", nodeName);
       node = client.nodes().withName(nodeName).get();
+      if (node == null) {
+        LOG.warn("Node {} not found in cluster", nodeName);
+        return null;
+      }
       cache.putNode(nodeName, node);
     }
     return node;
@@ -558,7 +581,11 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
       Map<String, String> podLabels = pod.getMetadata().getLabels();
       LOG.debug("Labels for pod [{}]:[{}]....", pod.getMetadata().getName(), podLabels);
 
-      for (PodIP podIp : pod.getStatus().getPodIPs()) {
+      PodStatus podStatus = pod.getStatus();
+      if (podStatus == null || podStatus.getPodIPs() == null) {
+        continue;
+      }
+      for (PodIP podIp : podStatus.getPodIPs()) {
         LOG.debug("...assigned to pod IP [{}]", podIp.getIp());
         result.put(podIp.getIp(), podLabels);
       }
@@ -578,27 +605,34 @@ public class StackableTopologyProvider implements DNSToSwitchMapping {
             new ResourceEventHandler<>() {
               @Override
               public void onAdd(Pod pod) {
-                cache.putPod(pod.getMetadata().getName(), pod);
-                for (PodIP ip : pod.getStatus().getPodIPs()) {
-                  cache.putPod(ip.getIp(), pod);
-                }
-                LOG.debug("Pod {} added", pod.getMetadata().getName());
-              }
-
-              @Override
-              public void onUpdate(Pod oldPod, Pod newPod) {
-                cache.putPod(oldPod.getMetadata().getName(), newPod);
-                for (PodIP ip : oldPod.getStatus().getPodIPs()) {
-                  cache.putPod(ip.getIp(), newPod);
-                }
-                LOG.trace("Pod {} updated", oldPod.getMetadata().getName());
+                addPod(pod);
               }
 
               @Override
               public void onDelete(Pod pod, boolean deletedFinalStateUnknown) {
+                deletePod(pod);
+              }
+
+              @Override
+              public void onUpdate(Pod oldPod, Pod newPod) {
+                // In case the IPs are updated, update all IP keys
+                deletePod(oldPod);
+                addPod(newPod);
+                LOG.trace("Pod {} updated", oldPod.getMetadata().getName());
+              }
+
+              private void addPod(Pod pod) {
+                cachePodByNameAndIps(pod);
+                LOG.debug("Pod {} added", pod.getMetadata().getName());
+              }
+
+              private void deletePod(Pod pod) {
                 cache.deletePod(pod.getMetadata().getName());
-                for (PodIP ip : pod.getStatus().getPodIPs()) {
-                  cache.deletePod(ip.getIp());
+                PodStatus podStatus = pod.getStatus();
+                if (podStatus != null && podStatus.getPodIPs() != null) {
+                  for (PodIP ip : podStatus.getPodIPs()) {
+                    cache.deletePod(ip.getIp());
+                  }
                 }
                 LOG.debug("Pod {} deleted", pod.getMetadata().getName());
               }
