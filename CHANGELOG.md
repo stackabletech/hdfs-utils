@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-02-24
+
 ### Changed
 
 - Refactored topology-provider to improve cache usage and readability ([#60]).
