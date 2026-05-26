@@ -10,9 +10,9 @@ This project contains multiple plugins for Apache Hadoop, which are intended to 
 
 ## Installation
 
-Currently you can compile hdfs-utils against Hadoop 3.3.6, 3.4.1 or 3.4.2. You need to specify the version by activating either the `hadoop-3.3.6`, `hadoop-3.4.1` or the `hadoop-3.4.2` profile below.
+Currently you can compile hdfs-utils against Hadoop 3.4.2, 3.4.3 or 3.5.0. You need to specify the version by activating either the `hadoop-3.4.2`, `hadoop-3.4.3` or the `hadoop-3.5.0` profile below.
 
-Run e.g. `mvn clean package -P hadoop-3.4.2` and put the resulting `target/hdfs-utils-*.jar` file on your HDFS classpath.
+Run e.g. `mvn clean package -P hadoop-3.5.0` and put the resulting `target/hdfs-utils-*.jar` file on your HDFS classpath.
 The easiest way to achieve this is to put it in the directory `/stackable/hadoop/share/hadoop/tools/lib/`.
 The Stackable HDFS already takes care of this, you don't need to do anything in this case.
 
@@ -21,6 +21,7 @@ The Stackable HDFS already takes care of this, you don't need to do anything in 
 > [!IMPORTANT]
 > The authorizer only works when used by an HDFS version that includes fixes from https://github.com/apache/hadoop/pull/6553.
 > Stackable HDFS versions starting with `3.3.4` already contain this patch.
+> Upstream Hadoop fixed this in `3.5.0` via https://github.com/apache/hadoop/pull/6776.
 
 ### Configuration
 
