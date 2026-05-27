@@ -21,7 +21,7 @@ The Stackable HDFS already takes care of this, you don't need to do anything in 
 > [!IMPORTANT]
 > The authorizer only works when used by an HDFS version that includes fixes from https://github.com/apache/hadoop/pull/6553.
 > Stackable HDFS versions starting with `3.3.4` already contain this patch.
-> Upstream Hadoop fixed this in `3.5.0` via https://github.com/apache/hadoop/pull/6776.
+> Upstream Hadoop fixed this in `3.5.0` via [this PR](https://github.com/apache/hadoop/pull/6776).
 
 ### Configuration
 
