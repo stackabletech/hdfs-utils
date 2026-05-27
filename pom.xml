@@ -59,7 +59,29 @@
     <spotless-maven-plugin.version>3.5.1</spotless-maven-plugin.version>
 
     <kubernetes-client.version>7.7.0</kubernetes-client.version>
+    <!--
+     Jackson is bundled and relocated (see maven-shade-plugin), so it is decoupled from the
+     Jackson that Hadoop ships. Keep this aligned with the version the kubernetes-client pulls in
+     (jackson-datatype-jsr310 / jackson-dataformat-yaml) so the bundled Jackson set is consistent. -->
+    <jackson.version>2.21.3</jackson.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!--
+       Force every Jackson module (databind, core, annotations, jsr310, yaml) to a single
+       version. Otherwise Maven mediation pins some modules (e.g. jackson-core) to the old
+       version pulled in through Hadoop's (provided) dependency tree, leaving the bundled and
+       relocated Jackson set internally inconsistent. -->
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -80,11 +102,15 @@
       <version>${slf4j.version}</version>
       <scope>provided</scope>
     </dependency>
+    <!--
+     Bundled (not provided) and relocated via the shade plugin, see the relocations there.
+     Pinned to the version used by the fabric8 kubernetes-client so the whole Jackson set
+     (databind, core, annotations, jsr310, yaml) stays internally consistent, independent of
+     whatever Jackson the target Hadoop ships. -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>${jackson.version}</version>
-      <scope>provided</scope>
     </dependency>
     <!-- Needed by topology-provider -->
     <dependency>
@@ -194,6 +220,20 @@
               <goal>shade</goal>
             </goals>
             <phase>package</phase>
+            <configuration>
+              <relocations>
+                <!--
+                 Relocate Jackson so the bundled (fabric8 kubernetes-client) Jackson is fully
+                 self-contained and does not clash with the Jackson that Hadoop ships on its
+                 classpath. Without this, the NameNode loads Hadoop's old jackson-databind
+                 (e.g. 2.12.7 on HDFS 3.4.x) while our bundled jackson-datatype-jsr310 expects a
+                 newer one, causing NoClassDefFoundError (e.g. ToEmptyObjectSerializer). -->
+                <relocation>
+                  <pattern>com.fasterxml.jackson</pattern>
+                  <shadedPattern>tech.stackable.shaded.com.fasterxml.jackson</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -286,7 +326,6 @@
         <hadoop.version>3.4.2</hadoop.version>
         <!-- Taken from https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-common/3.4.2 -->
         <slf4j.version>1.7.36</slf4j.version>
-        <jackson.version>2.12.7.1</jackson.version>
       </properties>
     </profile>
     <profile>
@@ -295,7 +334,6 @@
         <hadoop.version>3.4.3</hadoop.version>
         <!-- Taken from https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-common/3.4.3 -->
         <slf4j.version>1.7.36</slf4j.version>
-        <jackson.version>2.12.7.1</jackson.version>
       </properties>
     </profile>
     <profile>
@@ -304,7 +342,6 @@
         <hadoop.version>3.5.0</hadoop.version>
         <!-- Taken from https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-common/3.5.0 -->
         <slf4j.version>1.7.36</slf4j.version>
-        <jackson.version>2.18.6</jackson.version>
       </properties>
     </profile>
   </profiles>
