@@ -29,7 +29,9 @@
   </issueManagement>
 
   <properties>
-    <java.version>17</java.version>
+    <!-- Hadoop >= 3.5.x is compiled against Java 17, 3.4.x against Java 11 -->
+    <!-- Once we drop HDFS 3.4.x support, we can bump to 17 here -->
+    <java.version>11</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <maven.compiler.release>${java.version}</maven.compiler.release>
