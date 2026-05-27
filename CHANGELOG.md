@@ -4,15 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-??-??
+
 ### Added
 
-- Added support Hadoop `3.5.0` ([#XX]).
+- Added support Hadoop `3.5.0` ([#62]).
 
 ### Removed
 
-- Removed support for Hadoop `3.3.6` and `3.4.1` ([#XX]).
+- Removed support for Hadoop `3.3.6` and `3.4.1` ([#62]).
 
-[#XX]: https://github.com/stackabletech/hdfs-utils/pull/XX
+[#62]: https://github.com/stackabletech/hdfs-utils/pull/62
 
 ## [0.5.0] - 2026-02-24
 
