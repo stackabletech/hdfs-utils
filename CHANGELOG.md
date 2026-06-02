@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 
 - Added support Hadoop `3.5.0` ([#62]).
 
+### Changed
+
+- Shade jackson libraries needed by kubernetes-client to avoid version problems ([#62]).
+
 ### Removed
 
 - Removed support for Hadoop `3.3.6` and `3.4.1` ([#62]).
