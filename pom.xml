@@ -63,7 +63,7 @@
      Jackson is bundled and relocated (see maven-shade-plugin), so it is decoupled from the
      Jackson that Hadoop ships. Keep this aligned with the version the kubernetes-client pulls in
      (jackson-datatype-jsr310 / jackson-dataformat-yaml) so the bundled Jackson set is consistent. -->
-    <jackson.version>2.21.3</jackson.version>
+    <jackson.version>2.21.5</jackson.version>
   </properties>
 
   <dependencyManagement>
