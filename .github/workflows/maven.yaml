@@ -3,6 +3,8 @@
 ---
 name: Java CI with Maven
 
+permissions: {}
+
 on:
   push:
     branches:
