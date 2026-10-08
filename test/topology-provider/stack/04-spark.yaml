@@ -5,8 +5,8 @@ metadata:
   name: spark-teragen
 spec:
   sparkImage:
-    custom: oci.stackable.tech/sandbox/spark-k8s:3.5.6-stackable0.0.0-terasort
-    productVersion: 3.5.6
+    custom: oci.stackable.tech/sdp/spark-k8s:3.5.8-stackable0.0.0-terasort
+    productVersion: 3.5.8
     pullPolicy: IfNotPresent
   mode: cluster
   mainApplicationFile: local:///tmp/spark-terasort-1.2-SNAPSHOT.jar

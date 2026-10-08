@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
         - name: access-hdfs
-          image: oci.stackable.tech/sandbox/hadoop:3.4.2-stackable0.0.0-dev
+          image: oci.stackable.tech/sdp/hadoop:3.5.0-stackable0.0.0-dev
           imagePullPolicy: IfNotPresent
           env:
             - name: HADOOP_CONF_DIR
